@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.6
+// @version      1.7b
 // @include      http://*flightrising.com/*
 // @grant        none
 // ==/UserScript==
@@ -97,10 +97,19 @@ if /http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.hr
             document.title = 'Done.'
 # Auction House {{{1
 else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)
-    #TODO Add a clear button for item name.
     #TODO Make item names clickable to add them to item name field.
     TREASURE = 0
     GEMS     = 1
+
+    #TODO Add a clear button for item name.
+    #nameField    = $('input[name=name]')
+    itemNameText = $('#searching > div:nth-child(1)')
+    itemNameText.html(
+        itemNameText.html() +
+        '''
+        <a href='javascript:$("input[name=name").val("")'> (clear)</a>
+        '''
+    )
 
     class AuctionListing # {{{2
         constructor: (@element) -> # {{{3

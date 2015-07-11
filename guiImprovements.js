@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.6
+// @version      1.7b
 // @include      http://*flightrising.com/*
 // @grant        none
 // ==/UserScript==
@@ -21,7 +21,7 @@
  */
 
 (function() {
-  var AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, findMatches, gems, listener, listings, safeInterval, safeParseInt, treasure;
+  var AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, findMatches, gems, itemNameText, listener, listings, safeInterval, safeParseInt, treasure;
 
   findMatches = function(selector, min, max) {
     var matches, ref;
@@ -91,6 +91,8 @@
   } else if (/http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)) {
     TREASURE = 0;
     GEMS = 1;
+    itemNameText = $('#searching > div:nth-child(1)');
+    itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'> (clear)</a>');
     AuctionListing = (function() {
       function AuctionListing(element) {
         this.element = element;
