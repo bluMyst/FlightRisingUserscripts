@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.6asdf
+// @version      1.6ffds
 // @include      http://*flightrising.com/*
 // @grant        none
 // ==/UserScript==
