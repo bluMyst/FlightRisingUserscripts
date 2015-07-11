@@ -97,6 +97,8 @@ if /http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.hr
             document.title = 'Done.'
 # Auction House {{{1
 else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)
+    #TODO Add a clear button for item name.
+    #TODO Make item names clickable to add them to item name field.
     TREASURE = 0
     GEMS     = 1
 
