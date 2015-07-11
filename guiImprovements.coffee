@@ -114,6 +114,26 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
         '''
     )
 
+    # Simple test for a better way to find out if the AH data gets refreshed.
+    # TODO: Doesn't work.
+    ###
+    if window.browseAll?
+        oldBrowseAll     = window.browseAll
+        window.browseAll = (args...) ->
+            console.log "window.browseAll() called"
+            return oldBrowseAll args...
+
+        $(document.head).append("""
+            <script type="text/javascript">
+                window.browseAll = #{window.browseAll.toString()}
+            </script>
+        """)
+
+        console.log "window.browseAll() overwritten."
+    else
+        console.log "Couldn't find window.browseAll()"
+    ###
+
     class AuctionListing # {{{2
         constructor: (@element) -> # {{{3
             # WARNING: This might break in the future since it overrelies on :nth-child

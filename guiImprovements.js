@@ -95,6 +95,24 @@
     GEMS = 1;
     itemNameText = $('#searching > div:nth-child(1)');
     itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
+
+    /*
+    if window.browseAll?
+        oldBrowseAll     = window.browseAll
+        window.browseAll = (args...) ->
+            console.log "window.browseAll() called"
+            return oldBrowseAll args...
+    
+        $(document.head).append("""
+            <script type="text/javascript">
+                window.browseAll = #{window.browseAll.toString()}
+            </script>
+        """)
+    
+        console.log "window.browseAll() overwritten."
+    else
+        console.log "Couldn't find window.browseAll()"
+     */
     AuctionListing = (function() {
       function AuctionListing(element) {
         this.element = element;
