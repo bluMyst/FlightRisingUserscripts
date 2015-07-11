@@ -16,6 +16,8 @@
 - Flashes the title of Baldwin's Bubbling Brew when your brew is ready.
 - At the Auction House, clicking the icons next to price ranges will let you sort by only treasure or only gems.
 - Tells you how much items cost each at the auction house.
+- Adds a clear item name button at the auction house.
+- Clicking an item's name sets that to the name filter at the auction house.
 ###
 
 findMatches = (selector, min=1, max=Infinity) -> # {{{1
@@ -101,13 +103,14 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
     TREASURE = 0
     GEMS     = 1
 
-    #TODO Add a clear button for item name.
-    #nameField    = $('input[name=name]')
+    # Add a clear button for item name and put it right above the textbox.
     itemNameText = $('#searching > div:nth-child(1)')
     itemNameText.html(
         itemNameText.html() +
         '''
-        <a href='javascript:$("input[name=name").val("")'> (clear)</a>
+            <a href='javascript:$("input[name=name").val("")'>
+                &nbsp;(clear)
+            </a>
         '''
     )
 
@@ -131,16 +134,19 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
             @price = safeParseInt @button.text()
             @priceEA = @price / @numberOfItems
 
+            @nameElement = @element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)')
+            @name        = @nameElement.text()
+
         modifyElement: -> # {{{3
             # Modifies @element to include some extra information.
             # This is the straightforwad method but jQuery removes everything but the
             # text if we do it like this:
-            # @button.text(" #{@price} (#{Math.round @priceEA} ea)")
+            # @button.text(foo)
 
             if @numberOfItems > 1
                 target = @button[0].childNodes[2]
 
-                # If the offer expires then our target is gone.
+                # If our target is gone that probably means the offer expired.
                 if not target? then return
 
                 if not safeParseInt(target.textContent) == @price
@@ -150,6 +156,10 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
 
             # Give the new text some breathing room.
             @button.css('width', '150px')
+
+            @nameElement.html(
+                "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
+            )
 
     # Modify AH listings {{{2
     #TODO: The auction house listings aren't loaded when this gets called

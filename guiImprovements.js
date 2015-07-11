@@ -18,6 +18,8 @@
 - Flashes the title of Baldwin's Bubbling Brew when your brew is ready.
 - At the Auction House, clicking the icons next to price ranges will let you sort by only treasure or only gems.
 - Tells you how much items cost each at the auction house.
+- Adds a clear item name button at the auction house.
+- Clicking an item's name sets that to the name filter at the auction house.
  */
 
 (function() {
@@ -92,7 +94,7 @@
     TREASURE = 0;
     GEMS = 1;
     itemNameText = $('#searching > div:nth-child(1)');
-    itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'> (clear)</a>');
+    itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
     AuctionListing = (function() {
       function AuctionListing(element) {
         this.element = element;
@@ -107,6 +109,8 @@
         }
         this.price = safeParseInt(this.button.text());
         this.priceEA = this.price / this.numberOfItems;
+        this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
+        this.name = this.nameElement.text();
       }
 
       AuctionListing.prototype.modifyElement = function() {
@@ -121,7 +125,8 @@
           }
           target.textContent = " " + this.price + " (" + (Math.round(this.priceEA)) + " ea)";
         }
-        return this.button.css('width', '150px');
+        this.button.css('width', '150px');
+        return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
       };
 
       return AuctionListing;
