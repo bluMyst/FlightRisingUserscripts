@@ -23,53 +23,7 @@
  */
 
 (function() {
-  var AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, findMatches, gems, itemNameText, listener, listings, safeInterval, safeParseInt, treasure;
-
-  findMatches = function(selector, min, max) {
-    var matches, ref;
-    if (min == null) {
-      min = 1;
-    }
-    if (max == null) {
-      max = Infinity;
-    }
-    matches = $(selector);
-    if ((min <= (ref = matches.length) && ref <= max)) {
-      return matches;
-    } else {
-      throw Error(matches.length + " matches (expected " + min + "-" + max + ") found for selector: " + selector);
-    }
-  };
-
-  safeParseInt = function(s) {
-    var n;
-    n = parseInt(s);
-    if (isNaN(s)) {
-      throw new Error("Unable to parse int from \"" + s + "\"");
-    } else {
-      return n;
-    }
-  };
-
-  safeInterval = function(func, wait, times) {
-    var interv;
-    interv = (function(w, t) {
-      return (function() {
-        var e;
-        if ((t == null) || t-- > 0) {
-          setTimeout(interv, w);
-          try {
-            return func.call(null);
-          } catch (_error) {
-            e = _error;
-            t = 0;
-            throw e.toString();
-          }
-        }
-      });
-    })(wait, times);
-    return setTimeout(interv, wait);
-  };
+  var AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, gems, itemNameText, listener, listings, treasure;
 
   findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
