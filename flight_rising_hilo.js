@@ -7,7 +7,7 @@
 // @version     1.0
 // @namespace   ahto
 // @include     http://flightrising.com/main.php*p=hilo*
-// @require     https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js
+// @require     https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61510
 // @grant       none
 // ==/UserScript==
  */
@@ -74,11 +74,11 @@ if (timeRemaining.length === 1) {
 
 canvas = document.createElement('canvas');
 
-leftCard = $('#super-container > div:nth-child(3) > img:nth-child(1)')[0];
+leftCard = findMatches('img[src*="image_generators/hilo_img.php"]', 1, 1)[0];
 
-lo = $('#super-container > div:nth-child(3) > div:nth-child(4) > map:nth-child(3) > area:nth-child(1)')[0];
+lo = findMatches('area[href="main.php?p=hilo&choice=lo"]', 1, 1)[0];
 
-hi = $('#super-container > div:nth-child(3) > div:nth-child(4) > map:nth-child(3) > area:nth-child(2)')[0];
+hi = findMatches('area[href="main.php?p=hilo&choice=hi"]', 1, 1)[0];
 
 ref = [leftCard.width, leftCard.height], canvas.width = ref[0], canvas.height = ref[1];
 
