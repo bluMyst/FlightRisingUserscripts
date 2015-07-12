@@ -1,5 +1,4 @@
 # vim:foldmethod=marker
-
 findMatches = (selector, min=1, max=Infinity) -> # {{{1
     matches = $(selector)
 
@@ -35,4 +34,3 @@ safeInterval = (func, wait, times) -> # {{{1
     )(wait, times)
 
     setTimeout(interv, wait)
-
