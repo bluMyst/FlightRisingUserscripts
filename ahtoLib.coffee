@@ -35,10 +35,10 @@ safeInterval = (func, wait, times) -> # {{{1
 
     setTimeout(interv, wait)
 
-stringHashCode = -> # {{{1
+stringHashCode = (s) -> # {{{1
     hash = 0
 
-    for i in this
+    for i in s
         chr   = i.charCodeAt(0)
         hash  = ((hash << 5) - hash) + chr
         hash |= 0; # Convert to 32bit integer
