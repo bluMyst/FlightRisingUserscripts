@@ -1,13 +1,4 @@
 # vim:foldmethod=marker
-### UserScript options {{{1
-// ==UserScript==
-// @name         Ahto Library
-// @description  A library of functions for use in my other scripts.
-// @namespace    ahto
-// @version      1.0
-// @grant        none
-// ==/UserScript==
-###
 
 findMatches = (selector, min=1, max=Infinity) -> # {{{1
     matches = $(selector)
