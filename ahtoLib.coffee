@@ -35,7 +35,7 @@ safeInterval = (func, wait, times) -> # {{{1
 
     setTimeout(interv, wait)
 
-String.prototype.hashCode = -> # {{{1
+stringHashCode = -> # {{{1
     hash = 0
 
     for i in this

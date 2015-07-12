@@ -51,7 +51,7 @@ if (playAgain.length === 1) {
   return;
 }
 
-timeRemaining = $('#super-container > div:nth-child(3) > div:nth-child(1) > span:nth-child(2)')[0];
+timeRemaining = findMatches('#super-container > div:nth-child(3) > div:nth-child(1) > span:nth-child(2)', 0, 1);
 
 if (timeRemaining.length === 1) {
   console.log("Out of guesses.");
@@ -94,7 +94,7 @@ imageLoop = function(loops) {
     loops = 0;
   }
   ctx.drawImage(leftCard, 0, 0);
-  hash = canvas.toDataURL("image/png").hashCode();
+  hash = stringHashCode(canvas.toDataURL("image/png"));
   for (referenceCardNum in cards) {
     referenceHash = cards[referenceCardNum];
     if (hash === referenceHash) {
