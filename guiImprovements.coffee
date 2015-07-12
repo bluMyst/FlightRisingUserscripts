@@ -21,6 +21,13 @@
 - Clicking an item's name sets that to the name filter at the auction house.
 ###
 
+# Settings {{{1
+AUCTION_HOUSE_BUTTON_SPACING = '140px'
+
+# Consts {{{1
+TREASURE = 0
+GEMS     = 1
+
 # Add/remove links to the sidebar {{{1
 # pm = messages link
 # ge = buy gems link
@@ -64,10 +71,6 @@ if /http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.hr
             document.title = 'Done.'
 # Auction House {{{1
 else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)
-    #TODO Make item names clickable to add them to item name field.
-    TREASURE = 0
-    GEMS     = 1
-
     # Add a clear button for item name and put it right above the textbox.
     itemNameText = $('#searching > div:nth-child(1)')
     itemNameText.html(
@@ -80,7 +83,7 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
     )
 
     # Simple test for a better way to find out if the AH data gets refreshed.
-    # TODO: Doesn't work.
+    # TODO: Only works once.
     ###
     if window.browseAll?
         oldBrowseAll     = window.browseAll
@@ -109,12 +112,14 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
             @button = @element.find('[id*=buy_button]')
 
             # TODO: Testing @button.find as a boolean doesn't make sense to me right now.
+            ###
             if @button.find('img[src="/images/layout/icon_gems.png"]')
                 @currency = GEMS
             else if @button.find('img[src="/images/layout/icon_treasure.png"]')
                 @currency = TREASURE
             else
                 throw new Error("Unable to find currency for an auction house item.")
+            ###
 
             @price = safeParseInt @button.text()
             @priceEA = @price / @numberOfItems
@@ -140,7 +145,7 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
                 target.textContent = " #{@price} (#{Math.round @priceEA} ea)"
 
             # Give the new text some breathing room.
-            @button.css('width', '150px')
+            @button.css('width', AUCTION_HOUSE_BUTTON_SPACING)
 
             @nameElement.html(
                 "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
@@ -149,10 +154,9 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
     # Modify AH listings {{{2
     #TODO: The auction house listings aren't loaded when this gets called
     #      so I need to find an event or something. Using intervals right
-    #      now as an ugly utilitarian standin for a proper solution.
+    #      now is an ugly utilitarian standin for a proper solution.
     listings = undefined
     safeInterval((->
-        # TODO Cannot read property 'length' of undefined.
         new_listings = $('#ah_left div[id*=sale]')
 
         isUpdated = (->
@@ -191,8 +195,7 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
         else if event.currentTarget == gems.img[0]
             [us, them] = [gems, treasure]
         else
-            #TODO: Least helpful error message of all time.
-            throw new Error('Something went wrong with the auction house code.')
+            throw new Error('Something in the auction house code has gone horribly wrong.')
 
         if us.low.val() != '' or us.high.val() != ''
             us.low.val('')
@@ -207,4 +210,3 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
 
     treasure.img.click listener # {{{3
     gems.img.click     listener
-

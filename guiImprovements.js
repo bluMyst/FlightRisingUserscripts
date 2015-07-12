@@ -21,7 +21,13 @@
 - Adds a clear item name button at the auction house.
 - Clicking an item's name sets that to the name filter at the auction house.
  */
-var AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, gems, itemNameText, listener, listings, treasure;
+var AUCTION_HOUSE_BUTTON_SPACING, AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, gems, itemNameText, listener, listings, treasure;
+
+AUCTION_HOUSE_BUTTON_SPACING = '140px';
+
+TREASURE = 0;
+
+GEMS = 1;
 
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
@@ -43,8 +49,6 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
     };
   }
 } else if (/http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)) {
-  TREASURE = 0;
-  GEMS = 1;
   itemNameText = $('#searching > div:nth-child(1)');
   itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
 
@@ -70,13 +74,15 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
       this.element = element;
       this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
       this.button = this.element.find('[id*=buy_button]');
-      if (this.button.find('img[src="/images/layout/icon_gems.png"]')) {
-        this.currency = GEMS;
-      } else if (this.button.find('img[src="/images/layout/icon_treasure.png"]')) {
-        this.currency = TREASURE;
-      } else {
-        throw new Error("Unable to find currency for an auction house item.");
-      }
+
+      /*
+      if @button.find('img[src="/images/layout/icon_gems.png"]')
+          @currency = GEMS
+      else if @button.find('img[src="/images/layout/icon_treasure.png"]')
+          @currency = TREASURE
+      else
+          throw new Error("Unable to find currency for an auction house item.")
+       */
       this.price = safeParseInt(this.button.text());
       this.priceEA = this.price / this.numberOfItems;
       this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
@@ -95,7 +101,7 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
         }
         target.textContent = " " + this.price + " (" + (Math.round(this.priceEA)) + " ea)";
       }
-      this.button.css('width', '150px');
+      this.button.css('width', AUCTION_HOUSE_BUTTON_SPACING);
       return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
     };
 
@@ -157,7 +163,7 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
     } else if (event.currentTarget === gems.img[0]) {
       ref1 = [gems, treasure], us = ref1[0], them = ref1[1];
     } else {
-      throw new Error('Something went wrong with the auction house code.');
+      throw new Error('Something in the auction house code has gone horribly wrong.');
     }
     if (us.low.val() !== '' || us.high.val() !== '') {
       us.low.val('');
