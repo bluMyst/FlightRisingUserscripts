@@ -1,60 +1,53 @@
-###
+# vim: foldmethod=marker
+### UserScript info {{{1
 // ==UserScript==
 // @name        Flight Rising HiLo
+// @description Automatically plays the HiLo game for you.
+// @version     1.0
 // @namespace   ahto
 // @include     http://flightrising.com/main.php*p=hilo*
-// @version     1.0
+// @require     https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js
 // @grant       none
 // ==/UserScript==
 ###
 
-String.prototype.hashCode = ->
-    hash = 0
+# Card hashes {{{1
+# hashes confirmed to stay the same each time, even after a full day
+# There are no 1 or 13 cards on the known side.
+cards =
+    2 :  1892593725
+    3 :   745232701
+    4 :   343619172
+    5 :  -932029944
+    6 :  1865291602
+    7 : -1248784561
+    8 :   781610367
+    9 :  1741550947
+    10:  -974252486
+    11:   376369066
+    12: -1855727273
 
-    for i in this
-        chr   = i.charCodeAt(0)
-        hash  = ((hash << 5) - hash) + chr
-        hash |= 0; # Convert to 32bit integer
-
-    return hash
-
-randInt = (min, max) ->
-    min + Math.floor(Math.random() * (max+1-min))
-
-setRandomTimeout = (f, min, max) ->
+setRandomTimeout = (f, min=500, max=1500) -> # {{{1
     setTimeout(f, randInt(min, max))
 
-delayClick = (target) ->
+delayClick = (target) -> # {{{1
     setRandomTimeout((-> target.click()), 500, 1500)
 
-# hashes confirmed to stay the same each time, even after a full day
-cards =
-    1:   undefined
-    2:   1892593725
-    3:   745232701
-    4:   343619172
-    5:   -932029944
-    6:   1865291602
-    7:   -1248784561
-    8:   781610367
-    9:   1741550947
-    10:  -974252486
-    11:  376369066
-    12:  -1855727273
-    13:  undefined
+# The rest of the code {{{1
+playAgain = findMatches('.mb_button', 0, 1)
 
-playAgain = $('.mb_button')[0]
-
-if playAgain != undefined
+if playAgain.length == 1
     console.log('Play again button detected; clicking.')
     delayClick(playAgain)
     return
 
 timeRemaining = $('#super-container > div:nth-child(3) > div:nth-child(1) > span:nth-child(2)')[0]
 
-if timeRemaining != undefined
+if timeRemaining.length == 1
     console.log "Out of guesses."
+    # TODO Figure out how to exit the program early.
 
+    ###
     timeRemaining = timeRemaining.innerHTML.match(/(\d+) minutes/)[1]
     console.log "Detected time remaining of #{timeRemaining} minutes."
     timeRemaining++ # assume the number of minutes is rounded down
@@ -67,7 +60,9 @@ if timeRemaining != undefined
         timeRemaining,
         timeRemaining+5000
     )
+    ###
 
+# TODO Rework this canvas-making code to use jQuery.
 canvas   = document.createElement('canvas')
 leftCard = $('#super-container > div:nth-child(3) > img:nth-child(1)')[0]
 lo       = $('#super-container > div:nth-child(3) > div:nth-child(4) > map:nth-child(3) > area:nth-child(1)')[0]
@@ -75,9 +70,10 @@ hi       = $('#super-container > div:nth-child(3) > div:nth-child(4) > map:nth-c
 
 [canvas.width, canvas.height] = [leftCard.width, leftCard.height]
 console.log "Canvas width x height: #{canvas.width}x#{canvas.height}"
-$('.main')[0].appendChild(canvas)
+findMatches('.main', 1, 1)[0].appendChild(canvas)
 ctx = canvas.getContext('2d')
 
+# imageLoop defined and called {{{1
 imageLoop = (loops) ->
     if loops == undefined
         loops = 0
@@ -93,23 +89,30 @@ imageLoop = (loops) ->
             break
 
     if cardNum != undefined
-        #TODO: Make low random chance of failure.
-        if cardNum > 13/2
-            console.log 'Clicking lo button.'
-            delayClick(lo)
+        # 5% chance of failure
+        if Math.random() <= 0.05
+            console.log 'Decided to fail on purpose this time.'
+            [onLo, onHi] = [hi, lo]
         else
-            console.log 'Clicking hi button.'
-            delayClick(hi)
+            [onLo, onHi] = [lo, hi]
+
+        if cardNum > 13/2
+            console.log 'Best decision is to click lo'
+            delayClick(onLo)
+        else
+            console.log 'Best decision is to click hi'
+            delayClick(onHi)
     else
-        DELAY = 2000
+        DELAY     = 2000
         MAX_LOOPS = 10
+
         console.log "Failed to identify card with hash: #{hash}"
+
         if loops < MAX_LOOPS
             console.log "[#{loops+1}/#{MAX_LOOPS}] Looping in #{DELAY} ms..."
-            setTimeout( (-> imageLoop loops+1), DELAY )
+            setTimeout( (-> imageLoop(loops+1)), DELAY )
             return
         else
-            console.log "Max tries exceeded. Giving up and alerting the user."
-            alert "Failed to identify card with hash: #{hash}"
+            throw new Error "Failed to identify card with hash: #{hash}"
 
 imageLoop()

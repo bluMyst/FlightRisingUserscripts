@@ -34,3 +34,16 @@ safeInterval = (func, wait, times) -> # {{{1
     )(wait, times)
 
     setTimeout(interv, wait)
+
+String.prototype.hashCode = -> # {{{1
+    hash = 0
+
+    for i in this
+        chr   = i.charCodeAt(0)
+        hash  = ((hash << 5) - hash) + chr
+        hash |= 0; # Convert to 32bit integer
+
+    return hash
+
+randInt = (min, max) -> # {{{1
+    min + Math.floor(Math.random() * (max+1-min))
