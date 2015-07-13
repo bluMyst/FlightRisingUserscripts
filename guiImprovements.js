@@ -13,16 +13,20 @@
  */
 
 /* Features and changes {{{1
-- Removes redundant links to messages and gems.
+General:
 - Adds two new links to Baldwin's Bubbling Brew.
+- Removes redundant links to messages and gems.
 - Flashes the title of Baldwin's Bubbling Brew when your brew is ready.
-- At the Auction House, clicking the icons next to price ranges will let you sort by only treasure or only gems.
-- Tells you how much items cost each at the auction house.
-- Adds a clear item name button at the auction house.
-- Clicking an item's name sets that to the name filter at the auction house.
-- Auction house prices have commas in them.
+- Automatically clicks 'play again' at the HiLo game.
+
+Auction House:
+- Clicking the icons next to price ranges will let you sort by only treasure or only gems.
+- Tells you how much items cost per unit.
+- Adds a clear item name button.
+- Clicking an item's name sets that to the name filter.
+- Prices have commas in them.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, gems, itemNameText, listener, listings, showOnly, treasure;
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, gems, itemNameText, listener, listings, playAgain, showOnly, treasure;
 
 TREASURE = 0;
 
@@ -40,7 +44,7 @@ findMatches("a.navbar[href*=crossroads]").after('<a class=\'navbar navbar-glow-h
 
 if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)) {
   BLINK_TIMEOUT = 250;
-  if (findMatches("input[value='Collect!']", 0, 1).length !== 0) {
+  if (findMatches("input[value='Collect!']", 0, 1).length) {
     blinker = setInterval((function() {
       if (document.title === 'Ready!') {
         return document.title = '!!!!!!!!!!!!!!!!';
@@ -52,6 +56,11 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
       clearInterval(blinker);
       return document.title = 'Done.';
     };
+  }
+} else if ((new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)) {
+  playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
+  if (playAgain.length) {
+    playAgain.click();
   }
 } else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)) {
   itemNameText = $('#searching > div:nth-child(1)');

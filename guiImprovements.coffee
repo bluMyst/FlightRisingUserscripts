@@ -12,14 +12,18 @@
 ###
 
 ### Features and changes {{{1
-- Removes redundant links to messages and gems.
+General:
 - Adds two new links to Baldwin's Bubbling Brew.
+- Removes redundant links to messages and gems.
 - Flashes the title of Baldwin's Bubbling Brew when your brew is ready.
-- At the Auction House, clicking the icons next to price ranges will let you sort by only treasure or only gems.
-- Tells you how much items cost each at the auction house.
-- Adds a clear item name button at the auction house.
-- Clicking an item's name sets that to the name filter at the auction house.
-- Auction house prices have commas in them.
+- Automatically clicks 'play again' at the HiLo game.
+
+Auction House:
+- Clicking the icons next to price ranges will let you sort by only treasure or only gems.
+- Tells you how much items cost per unit.
+- Adds a clear item name button.
+- Clicking an item's name sets that to the name filter.
+- Prices have commas in them.
 ###
 
 # Consts {{{1
@@ -65,7 +69,7 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
     BLINK_TIMEOUT = 250
 
     # If there are any collect buttons.
-    if findMatches("input[value='Collect!']", 0, 1).length != 0
+    if findMatches("input[value='Collect!']", 0, 1).length
         blinker = setInterval((->
             if document.title == 'Ready!'
                 document.title = '!!!!!!!!!!!!!!!!'
@@ -76,6 +80,10 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
         window.onfocus = ->
             clearInterval blinker
             document.title = 'Done.'
+# HiLo Game {{{1
+else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)
+    playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1)
+    if playAgain.length then playAgain.click()
 # Auction House {{{1
 else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)
     # Add a clear button for item name and put it right above the textbox.
