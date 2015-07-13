@@ -144,6 +144,9 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
                 "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
             )
 
+            # TODO Why won't this work?
+            #@nameElement.css('color', '#731d08')
+
     # Simple test for a better way to find out if the AH data gets refreshed. {{{2
     # TODO: Only works once.
     ###
