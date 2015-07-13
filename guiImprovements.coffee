@@ -19,14 +19,21 @@
 - Tells you how much items cost each at the auction house.
 - Adds a clear item name button at the auction house.
 - Clicking an item's name sets that to the name filter at the auction house.
+- Auction house prices have commas in them.
 ###
-
-# Settings {{{1
-AUCTION_HOUSE_BUTTON_SPACING = '140px'
 
 # Consts {{{1
 TREASURE = 0
 GEMS     = 1
+
+# Settings {{{1
+# Auction House {{{2
+AH_BUTTON_SPACING   = '140px'
+AH_UPDATE_DELAY     = 2000
+
+# Set this to undefined for no default.
+# Can be TREASURE or GEMS
+AH_DEFAULT_CURRENCY = TREASURE
 
 # Add/remove links to the sidebar {{{1
 # pm = messages link
@@ -82,26 +89,6 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
         '''
     )
 
-    # Simple test for a better way to find out if the AH data gets refreshed.
-    # TODO: Only works once.
-    ###
-    if window.browseAll?
-        oldBrowseAll     = window.browseAll
-        window.browseAll = (args...) ->
-            console.log "window.browseAll() called"
-            return oldBrowseAll args...
-
-        $(document.head).append("""
-            <script type="text/javascript">
-                window.browseAll = #{window.browseAll.toString()}
-            </script>
-        """)
-
-        console.log "window.browseAll() overwritten."
-    else
-        console.log "Couldn't find window.browseAll()"
-    ###
-
     class AuctionListing # {{{2
         constructor: (@element) -> # {{{3
             # WARNING: This might break in the future since it overrelies on :nth-child
@@ -110,16 +97,6 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             )
 
             @button = @element.find('[id*=buy_button]')
-
-            # TODO: Testing @button.find as a boolean doesn't make sense to me right now.
-            ###
-            if @button.find('img[src="/images/layout/icon_gems.png"]')
-                @currency = GEMS
-            else if @button.find('img[src="/images/layout/icon_treasure.png"]')
-                @currency = TREASURE
-            else
-                throw new Error("Unable to find currency for an auction house item.")
-            ###
 
             @price = safeParseInt @button.text()
             @priceEA = @price / @numberOfItems
@@ -147,11 +124,31 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
                 target.textContent = " #{priceString} (#{priceEAString} ea)"
 
             # Give the new text some breathing room.
-            @button.css('width', AUCTION_HOUSE_BUTTON_SPACING)
+            @button.css('width', AH_BUTTON_SPACING)
 
             @nameElement.html(
                 "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
             )
+
+    # Simple test for a better way to find out if the AH data gets refreshed. {{{2
+    # TODO: Only works once.
+    ###
+    if window.browseAll?
+        oldBrowseAll     = window.browseAll
+        window.browseAll = (args...) ->
+            console.log "window.browseAll() called"
+            return oldBrowseAll args...
+
+        $(document.head).append("""
+            <script type="text/javascript">
+                window.browseAll = #{window.browseAll.toString()}
+            </script>
+        """)
+
+        console.log "window.browseAll() overwritten."
+    else
+        console.log "Couldn't find window.browseAll()"
+    ###
 
     # Modify AH listings {{{2
     #TODO: The auction house listings aren't loaded when this gets called
@@ -178,26 +175,26 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
         if isUpdated
             listings = (new AuctionListing $(i) for i in $('#ah_left div[id*=sale]'))
             i.modifyElement() for i in listings
-    ), 2000)
+    ), AH_UPDATE_DELAY)
 
     # Filter by only gems or only treasure {{{2
-    treasure = # {{{3
+    treasure =
         img:   findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1)
         low:   findMatches('input[name=tl]', 1, 1)
         high:  findMatches('input[name=th]', 1, 1)
 
-    gems = # {{{3
+    gems =
         img:   findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1)
         low:   findMatches('input[name=gl]', 1, 1)
         high:  findMatches('input[name=gh]', 1, 1)
 
-    listener = (event) -> # {{{3
-        if event.currentTarget == treasure.img[0]
+    showOnly = (currency) -> # {{{3
+        if currency == TREASURE
             [us, them] = [treasure, gems]
-        else if event.currentTarget == gems.img[0]
+        else if currency == GEMS
             [us, them] = [gems, treasure]
         else
-            throw new Error('Something in the auction house code has gone horribly wrong.')
+            throw new Error "showOnly called with invalid currency: #{currency}"
 
         if us.low.val() != '' or us.high.val() != ''
             us.low.val('')
@@ -210,5 +207,19 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             them.low.val('')
             them.high.val('')
 
-    treasure.img.click listener # {{{3
+    listener = (event) -> # {{{3
+        if event.currentTarget == treasure.img[0]
+            showOnly(TREASURE)
+        else if event.currentTarget == gems.img[0]
+            showOnly(GEMS)
+        else
+            throw new Error 'Something in the auction house code has gone horribly wrong.'
+
+    # 3}}}
+
+    if AH_DEFAULT_CURRENCY?
+        showOnly AH_DEFAULT_CURRENCY
+        findMatches('input[type=submit]', 1, 1).click()
+
+    treasure.img.click listener
     gems.img.click     listener
