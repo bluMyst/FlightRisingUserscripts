@@ -1,8 +1,9 @@
-ahtoLib: ahtoLib.coffee
-	coffee -bc ahtoLib.coffee
+CFLAGS=-bc
+CC=coffee
 
-guiImprovements: guiImprovements.coffee
-	coffee -bc guiImprovements.coffee
+all: *.js
 
-hilo: hilo.coffee
-	coffee -bc hilo.coffee
+# $< is the first item in the dependencies list
+# % lets us generalize for all .js files
+%.js: %.coffee
+	$(CC) $(CFLAGS) $<
