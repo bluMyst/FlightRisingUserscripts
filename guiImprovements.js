@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.10.1
+// @version      1.11.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -206,4 +206,6 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
   }
   treasure.img.click(listener);
   gems.img.click(listener);
+  treasure.img.css('cursor', 'pointer');
+  gems.img.css('cursor', 'pointer');
 }

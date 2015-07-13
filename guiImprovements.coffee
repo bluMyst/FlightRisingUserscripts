@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.10.1
+// @version      1.11.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -236,3 +236,8 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
 
     treasure.img.click listener
     gems.img.click     listener
+
+    # Make the currency buttons look clickable by changing the cursor when you
+    # hover over them.
+    treasure.img.css 'cursor', 'pointer'
+    gems.img.css     'cursor', 'pointer'
