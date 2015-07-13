@@ -27,7 +27,7 @@ TREASURE = 0
 GEMS     = 1
 
 # Settings {{{1
-# Auction House {{{2
+# AH is short for Auction House
 AH_BUTTON_SPACING   = '140px'
 AH_UPDATE_DELAY     = 2000
 
@@ -90,7 +90,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
     )
 
     class AuctionListing # {{{2
-        constructor: (@element) -> # {{{3
+        constructor: (@element) ->
             # WARNING: This might break in the future since it overrelies on :nth-child
             @numberOfItems = safeParseInt(
                 @element.find('div:nth-child(1) > span:nth-child(1) > span').text()
@@ -104,7 +104,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             @nameElement = @element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)')
             @name        = @nameElement.text()
 
-        modifyElement: -> # {{{3
+        modifyElement: ->
             # Modifies @element to include some extra information.
             # This is the straightforwad method but jQuery removes everything but the
             # text if we do it like this:
@@ -216,7 +216,6 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             throw new Error 'Something in the auction house code has gone horribly wrong.'
 
     # 3}}}
-
     if AH_DEFAULT_CURRENCY?
         showOnly AH_DEFAULT_CURRENCY
         findMatches('input[type=submit]', 1, 1).click()
