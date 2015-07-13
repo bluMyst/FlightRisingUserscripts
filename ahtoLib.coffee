@@ -47,3 +47,15 @@ stringHashCode = (s) -> # {{{1
 
 randInt = (min, max) -> # {{{1
     min + Math.floor(Math.random() * (max+1-min))
+
+numberWithCommas = (n) -> # {{{1
+    return n.toString().replace(
+        ///
+            \B
+            (?=
+                (\d{3})+
+                (?!\d)
+            )
+        ///g,
+        ",",
+    )

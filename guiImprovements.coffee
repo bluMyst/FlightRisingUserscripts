@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.7b
+// @version      1.8
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61510
 // @grant        none
@@ -142,7 +142,9 @@ else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.h
                 if not safeParseInt(target.textContent) == @price
                     throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
 
-                target.textContent = " #{@price} (#{Math.round @priceEA} ea)"
+                priceString   = numberWithCommas(@price)
+                priceEAString = numberWithCommas(Math.round @priceEA)
+                target.textContent = " #{priceString} (#{priceEAString} ea)"
 
             # Give the new text some breathing room.
             @button.css('width', AUCTION_HOUSE_BUTTON_SPACING)

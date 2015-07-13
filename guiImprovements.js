@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.7b
+// @version      1.8
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61510
 // @grant        none
@@ -90,7 +90,7 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
     }
 
     AuctionListing.prototype.modifyElement = function() {
-      var target;
+      var priceEAString, priceString, target;
       if (this.numberOfItems > 1) {
         target = this.button[0].childNodes[2];
         if (target == null) {
@@ -99,7 +99,9 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
         if (!safeParseInt(target.textContent) === this.price) {
           throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
         }
-        target.textContent = " " + this.price + " (" + (Math.round(this.priceEA)) + " ea)";
+        priceString = numberWithCommas(this.price);
+        priceEAString = numberWithCommas(Math.round(this.priceEA));
+        target.textContent = " " + priceString + " (" + priceEAString + " ea)";
       }
       this.button.css('width', AUCTION_HOUSE_BUTTON_SPACING);
       return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
