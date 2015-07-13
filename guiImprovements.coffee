@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.9.0
+// @version      1.10.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -38,6 +38,10 @@ AH_UPDATE_DELAY     = 2000
 # Set this to undefined for no default.
 # Can be TREASURE or GEMS
 AH_DEFAULT_CURRENCY = TREASURE
+
+# Min and max times to wait before clicking play again.
+HILO_CLICK_MIN =  200
+HILO_CLICK_MAX = 1000
 
 # Add/remove links to the sidebar {{{1
 # pm = messages link
@@ -82,8 +86,10 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
             document.title = 'Done.'
 # HiLo Game {{{1
 else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)
-    playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1)
-    if playAgain.length then playAgain.click()
+    setTimeout((->
+            playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1)
+            if playAgain.length then playAgain.click()
+    ), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX))
 # Auction House {{{1
 else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)
     # Add a clear button for item name and put it right above the textbox.

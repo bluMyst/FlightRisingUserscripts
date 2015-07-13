@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.9.0
+// @version      1.10.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -26,7 +26,7 @@ Auction House:
 - Clicking an item's name sets that to the name filter.
 - Prices have commas in them.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BLINK_TIMEOUT, GEMS, TREASURE, blinker, gems, itemNameText, listener, listings, playAgain, showOnly, treasure;
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BLINK_TIMEOUT, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TREASURE, blinker, gems, itemNameText, listener, listings, showOnly, treasure;
 
 TREASURE = 0;
 
@@ -37,6 +37,10 @@ AH_BUTTON_SPACING = '140px';
 AH_UPDATE_DELAY = 2000;
 
 AH_DEFAULT_CURRENCY = TREASURE;
+
+HILO_CLICK_MIN = 200;
+
+HILO_CLICK_MAX = 1000;
 
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
@@ -58,10 +62,13 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     };
   }
 } else if ((new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)) {
-  playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
-  if (playAgain.length) {
-    playAgain.click();
-  }
+  setTimeout((function() {
+    var playAgain;
+    playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
+    if (playAgain.length) {
+      return playAgain.click();
+    }
+  }), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX));
 } else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)) {
   itemNameText = $('#searching > div:nth-child(1)');
   itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
