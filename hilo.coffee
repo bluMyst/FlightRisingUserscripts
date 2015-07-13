@@ -1,4 +1,6 @@
 # vim: foldmethod=marker
+# This is broken, don't bother with it. Every browser, and possibly every computer,
+# will give you a different image hash.
 ### UserScript info {{{1
 // ==UserScript==
 // @name        Flight Rising HiLo
@@ -10,6 +12,10 @@
 // @grant       none
 // ==/UserScript==
 ###
+
+# Settings {{{1
+# 0.05 would be a 5% chance.
+FAILURE_CHANCE = 0.05
 
 # Card hashes {{{1
 # hashes confirmed to stay the same each time, even after a full day
@@ -33,19 +39,38 @@ setRandomTimeout = (f, min=500, max=1500) -> # {{{1
 delayClick = (target) -> # {{{1
     setRandomTimeout((-> target.click()), 500, 1500)
 
-# The rest of the code {{{1
-playAgain = findMatches('.mb_button', 0, 1)
+exit = -> # {{{1
+    throw new Error 'Not really an error just stopping execution.'
 
-if playAgain.length == 1
+# hashImage {{{1
+canvas = $('<canvas>')
+findMatches('.main', 1, 1).append(canvas)
+ctx = canvas[0].getContext('2d')
+
+hashImage = (img) ->
+    canvas.width  img.width()
+    canvas.height img.height()
+
+    ctx.drawImage(img[0], 0, 0)
+
+    hash = stringHashCode( canvas[0].toDataURL("image/png") )
+
+    console.log "Hash: #{hash}"
+    console.log canvas[0].toDataURL('image/png')
+    # TODO Figure out why this differs between browsers.
+    return hash
+
+# The rest of the code {{{1
+playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1)
+if (playAgain).length
     console.log('Play again button detected; clicking.')
     delayClick(playAgain)
-    return
+    exit()
 
-timeRemaining = findMatches('#super-container > div:nth-child(3) > div:nth-child(1) > span:nth-child(2)', 0, 1)
-
-if timeRemaining.length == 1
+timeRemaining = findMatches('div[style*="background-image:url(../images/layout/trunk.png)"] > div > span', 0, 1)
+if timeRemaining.length
     console.log "Out of guesses."
-    # TODO Figure out how to exit the program early.
+    exit()
 
     ###
     timeRemaining = timeRemaining.innerHTML.match(/(\d+) minutes/)[1]
@@ -62,26 +87,12 @@ if timeRemaining.length == 1
     )
     ###
 
-# TODO Rework this code to use jQuery.
-canvas   = document.createElement('canvas')
-leftCard = findMatches('img[src*="image_generators/hilo_img.php"]', 1, 1)[0]
-lo       = findMatches('area[href="main.php?p=hilo&choice=lo"]', 1, 1)[0]
-hi       = findMatches('area[href="main.php?p=hilo&choice=hi"]', 1, 1)[0]
+leftCard = findMatches('img[src*="image_generators/hilo_img.php"]', 1, 1)
+lo       = findMatches('area[href="main.php?p=hilo&choice=lo"]', 1, 1)
+hi       = findMatches('area[href="main.php?p=hilo&choice=hi"]', 1, 1)
 
-[canvas.width, canvas.height] = [leftCard.width, leftCard.height]
-console.log "Canvas width x height: #{canvas.width}x#{canvas.height}"
-
-findMatches('.main', 1, 1)[0].appendChild(canvas)
-ctx = canvas.getContext('2d')
-
-# imageLoop defined and called {{{1
-imageLoop = (loops) ->
-    if loops == undefined
-        loops = 0
-
-    ctx.drawImage(leftCard, 0, 0)
-
-    hash = stringHashCode( canvas.toDataURL("image/png") )
+(imageLoop = (loops=0) -> # {{{1
+    hash = hashImage leftCard
 
     for referenceCardNum, referenceHash of cards
         if hash == referenceHash
@@ -89,9 +100,9 @@ imageLoop = (loops) ->
             console.log "Card identified as #{cardNum}"
             break
 
-    if cardNum != undefined
-        # 5% chance of failure
-        if Math.random() <= 0.05
+    ###
+    if cardNum?
+        if Math.random() <= FAILURE_CHANCE
             console.log 'Decided to fail on purpose this time.'
             [onLo, onHi] = [hi, lo]
         else
@@ -115,5 +126,5 @@ imageLoop = (loops) ->
             return
         else
             throw new Error "Failed to identify card with hash: #{hash}"
-
-imageLoop()
+    ###
+)() # <--- Hey notice this part it's important.

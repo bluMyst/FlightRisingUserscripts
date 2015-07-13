@@ -33,7 +33,7 @@ findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.nav
 
 findMatches("a.navbar[href*=crossroads]").after('<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/transmute\'>\n    Alchemy (Transmute)\n</a>\n<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/create\'>\n    Alchemy (Create)\n</a>');
 
-if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.href)) {
+if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)) {
   BLINK_TIMEOUT = 250;
   if (findMatches("input[value='Collect!']", 0, 1).length !== 0) {
     blinker = setInterval((function() {
@@ -48,7 +48,7 @@ if (/http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.h
       return document.title = 'Done.';
     };
   }
-} else if (/http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)) {
+} else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)) {
   itemNameText = $('#searching > div:nth-child(1)');
   itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
 

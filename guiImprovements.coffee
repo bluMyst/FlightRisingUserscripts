@@ -54,7 +54,7 @@ findMatches("a.navbar[href*=crossroads]").after('''
 ''')
 
 # Baldwin's Bubbling Brew {{{1
-if /http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.href)
+if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)
     BLINK_TIMEOUT = 250
 
     # If there are any collect buttons.
@@ -70,7 +70,7 @@ if /http:\/\/www1.flightrising.com\/trading\/baldwin.*/i.test(window.location.hr
             clearInterval blinker
             document.title = 'Done.'
 # Auction House {{{1
-else if /http:\/\/flightrising\.com\/main\.php\?.*p=ah.*/.test(window.location.href)
+else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)
     # Add a clear button for item name and put it right above the textbox.
     itemNameText = $('#searching > div:nth-child(1)')
     itemNameText.html(

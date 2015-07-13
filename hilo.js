@@ -11,7 +11,9 @@
 // @grant       none
 // ==/UserScript==
  */
-var canvas, cards, ctx, delayClick, hi, imageLoop, leftCard, lo, playAgain, ref, setRandomTimeout, timeRemaining;
+var FAILURE_CHANCE, canvas, cards, ctx, delayClick, exit, hashImage, hi, imageLoop, leftCard, lo, playAgain, setRandomTimeout, timeRemaining;
+
+FAILURE_CHANCE = 0.05;
 
 cards = {
   2: 1892593725,
@@ -43,18 +45,40 @@ delayClick = function(target) {
   }), 500, 1500);
 };
 
-playAgain = findMatches('.mb_button', 0, 1);
+exit = function() {
+  throw new Error('Not really an error just stopping execution.');
+};
 
-if (playAgain.length === 1) {
+canvas = $('<canvas>');
+
+findMatches('.main', 1, 1).append(canvas);
+
+ctx = canvas[0].getContext('2d');
+
+hashImage = function(img) {
+  var hash;
+  canvas.width(img.width());
+  canvas.height(img.height());
+  ctx.drawImage(img[0], 0, 0);
+  hash = stringHashCode(canvas[0].toDataURL("image/png"));
+  console.log("Hash: " + hash);
+  console.log(canvas[0].toDataURL('image/png'));
+  return hash;
+};
+
+playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
+
+if (playAgain.length) {
   console.log('Play again button detected; clicking.');
   delayClick(playAgain);
-  return;
+  exit();
 }
 
-timeRemaining = findMatches('#super-container > div:nth-child(3) > div:nth-child(1) > span:nth-child(2)', 0, 1);
+timeRemaining = findMatches('div[style*="background-image:url(../images/layout/trunk.png)"] > div > span', 0, 1);
 
-if (timeRemaining.length === 1) {
+if (timeRemaining.length) {
   console.log("Out of guesses.");
+  exit();
 
   /*
   timeRemaining = timeRemaining.innerHTML.match(/(\d+) minutes/)[1]
@@ -72,64 +96,56 @@ if (timeRemaining.length === 1) {
    */
 }
 
-canvas = document.createElement('canvas');
+leftCard = findMatches('img[src*="image_generators/hilo_img.php"]', 1, 1);
 
-leftCard = findMatches('img[src*="image_generators/hilo_img.php"]', 1, 1)[0];
+lo = findMatches('area[href="main.php?p=hilo&choice=lo"]', 1, 1);
 
-lo = findMatches('area[href="main.php?p=hilo&choice=lo"]', 1, 1)[0];
+hi = findMatches('area[href="main.php?p=hilo&choice=hi"]', 1, 1);
 
-hi = findMatches('area[href="main.php?p=hilo&choice=hi"]', 1, 1)[0];
-
-ref = [leftCard.width, leftCard.height], canvas.width = ref[0], canvas.height = ref[1];
-
-console.log("Canvas width x height: " + canvas.width + "x" + canvas.height);
-
-findMatches('.main', 1, 1)[0].appendChild(canvas);
-
-ctx = canvas.getContext('2d');
-
-imageLoop = function(loops) {
-  var DELAY, MAX_LOOPS, cardNum, hash, onHi, onLo, ref1, ref2, referenceCardNum, referenceHash;
-  if (loops === void 0) {
+(imageLoop = function(loops) {
+  var cardNum, hash, referenceCardNum, referenceHash, results;
+  if (loops == null) {
     loops = 0;
   }
-  ctx.drawImage(leftCard, 0, 0);
-  hash = stringHashCode(canvas.toDataURL("image/png"));
+  hash = hashImage(leftCard);
+  results = [];
   for (referenceCardNum in cards) {
     referenceHash = cards[referenceCardNum];
     if (hash === referenceHash) {
       cardNum = referenceCardNum;
       console.log("Card identified as " + cardNum);
       break;
+    } else {
+      results.push(void 0);
     }
   }
-  if (cardNum !== void 0) {
-    if (Math.random() <= 0.05) {
-      console.log('Decided to fail on purpose this time.');
-      ref1 = [hi, lo], onLo = ref1[0], onHi = ref1[1];
-    } else {
-      ref2 = [lo, hi], onLo = ref2[0], onHi = ref2[1];
-    }
-    if (cardNum > 13 / 2) {
-      console.log('Best decision is to click lo');
-      return delayClick(onLo);
-    } else {
-      console.log('Best decision is to click hi');
-      return delayClick(onHi);
-    }
-  } else {
-    DELAY = 2000;
-    MAX_LOOPS = 10;
-    console.log("Failed to identify card with hash: " + hash);
-    if (loops < MAX_LOOPS) {
-      console.log("[" + (loops + 1) + "/" + MAX_LOOPS + "] Looping in " + DELAY + " ms...");
-      setTimeout((function() {
-        return imageLoop(loops + 1);
-      }), DELAY);
-    } else {
-      throw new Error("Failed to identify card with hash: " + hash);
-    }
-  }
-};
+  return results;
 
-imageLoop();
+  /*
+  if cardNum?
+      if Math.random() <= FAILURE_CHANCE
+          console.log 'Decided to fail on purpose this time.'
+          [onLo, onHi] = [hi, lo]
+      else
+          [onLo, onHi] = [lo, hi]
+  
+      if cardNum > 13/2
+          console.log 'Best decision is to click lo'
+          delayClick(onLo)
+      else
+          console.log 'Best decision is to click hi'
+          delayClick(onHi)
+  else
+      DELAY     = 2000
+      MAX_LOOPS = 10
+  
+      console.log "Failed to identify card with hash: #{hash}"
+  
+      if loops < MAX_LOOPS
+          console.log "[#{loops+1}/#{MAX_LOOPS}] Looping in #{DELAY} ms..."
+          setTimeout( (-> imageLoop(loops+1)), DELAY )
+          return
+      else
+          throw new Error "Failed to identify card with hash: #{hash}"
+   */
+})();
