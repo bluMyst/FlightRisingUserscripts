@@ -11,5 +11,10 @@ all: *.js
 %.js: %.coffee
 	$(CC) $(CFLAGS) $<
 
-%: %.js ahtoLib.js
-	cat ahtoLib.js $< | clip
+# The sandbox is meant to be pasted right into a javascript console
+# so ahtoLib is automatically included.
+sandbox: sandbox.js
+	cat ahtoLib.js sandbox.js | clip
+
+%: %.js
+	clip < $<
