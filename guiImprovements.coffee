@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.11.0
+// @version      1.12.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -15,7 +15,6 @@
 General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
-- Flashes the title of Baldwin's Bubbling Brew when your brew is ready.
 - Automatically clicks 'play again' at the HiLo game.
 
 Auction House:
@@ -24,11 +23,49 @@ Auction House:
 - Adds a clear item name button.
 - Clicking an item's name sets that to the name filter.
 - Prices have commas in them.
+
+Baldwin's Bubbling Brew:
+- Replaces useless dialog text with a handy guide.
+- Flashes title when your brew is ready. (Leave BBB running in a background tab)
 ###
 
 # Consts {{{1
 TREASURE = 0
 GEMS     = 1
+
+TD_ATTR = 'style="font-size:12px;"'
+BBB_GUIDE = """
+    <table>
+        <tr>
+            <th #{TD_ATTR}><b>Muck (Familiars)</b></th>
+            <th #{TD_ATTR}><b>Slime (Apparel)</b></th>
+            <th #{TD_ATTR}><b>Misc</b></th>
+        </tr>
+        <tr>
+            <td #{TD_ATTR}>Copper 50%</td>
+            <td #{TD_ATTR}>Grey 70%(?)</td>
+            <td #{TD_ATTR}>Green 45%</td>
+        </tr>
+        <tr>
+            <td #{TD_ATTR}>Silver 30%</td>
+            <td #{TD_ATTR}>White 20%(?)</td>
+            <td #{TD_ATTR}>Yellow 20%</td>
+        </tr>
+        <tr>
+            <td #{TD_ATTR}>Gold 20%</td>
+            <td #{TD_ATTR}>Black 10%(?)</td>
+            <td #{TD_ATTR}>Orange 15%</td>
+        </tr>
+        <tr> <td/> <td/> <td #{TD_ATTR}>Red 10%</td> </tr>
+        <tr> <td/> <td/> <td #{TD_ATTR}>Purple 8%</td> </tr>
+        <tr> <td/> <td/> <td #{TD_ATTR}>Blue 2%</td> </tr>
+    </table>
+    <b>
+        <br>
+        Misc:<br>
+        Ooze (Material), Sludge (Trinkets), Goo (Food)
+    </b>
+"""
 
 # Settings {{{1
 # AH is short for Auction House
@@ -42,6 +79,8 @@ AH_DEFAULT_CURRENCY = TREASURE
 # Min and max times to wait before clicking play again.
 HILO_CLICK_MIN =  200
 HILO_CLICK_MAX = 1000
+
+BBB_BLINK_TIMEOUT = 250
 
 # Add/remove links to the sidebar {{{1
 # pm = messages link
@@ -70,8 +109,6 @@ findMatches("a.navbar[href*=crossroads]").after('''
 
 # Baldwin's Bubbling Brew {{{1
 if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)
-    BLINK_TIMEOUT = 250
-
     # If there are any collect buttons.
     if findMatches("input[value='Collect!']", 0, 1).length
         blinker = setInterval((->
@@ -79,11 +116,19 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
                 document.title = '!!!!!!!!!!!!!!!!'
             else
                 document.title = 'Ready!'
-        ), BLINK_TIMEOUT)
+        ), BBB_BLINK_TIMEOUT)
 
         window.onfocus = ->
             clearInterval blinker
             document.title = 'Done.'
+
+    if (new RegExp('/baldwin/create')).test(window.location.href)
+        bubble   = findMatches('.baldwin-create-speech-bubble', 1, 1)
+        instruct = findMatches('.baldwin-create-instruct', 1, 1)
+
+        bubble.css('padding', '5px').css('right', 'inherit')
+        instruct.css('background', 'inherit')
+        bubble.html BBB_GUIDE
 # HiLo Game {{{1
 else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)
     setTimeout((->

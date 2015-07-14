@@ -16,7 +16,6 @@
 General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
-- Flashes the title of Baldwin's Bubbling Brew when your brew is ready.
 - Automatically clicks 'play again' at the HiLo game.
 
 Auction House:
@@ -25,12 +24,20 @@ Auction House:
 - Adds a clear item name button.
 - Clicking an item's name sets that to the name filter.
 - Prices have commas in them.
+
+Baldwin's Bubbling Brew:
+- Replaces useless dialog text with a handy guide.
+- Flashes title when your brew is ready. (Leave BBB running in a background tab)
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BLINK_TIMEOUT, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TREASURE, blinker, gems, itemNameText, listener, listings, showOnly, treasure;
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, bubble, gems, instruct, itemNameText, listener, listings, showOnly, treasure;
 
 TREASURE = 0;
 
 GEMS = 1;
+
+TD_ATTR = 'style="font-size:12px;"';
+
+BBB_GUIDE = "<table>\n    <tr>\n        <th " + TD_ATTR + "><b>Muck (Familiars)</b></th>\n        <th " + TD_ATTR + "><b>Slime (Apparel)</b></th>\n        <th " + TD_ATTR + "><b>Misc</b></th>\n    </tr>\n    <tr>\n        <td " + TD_ATTR + ">Copper 50%</td>\n        <td " + TD_ATTR + ">Grey 70%(?)</td>\n        <td " + TD_ATTR + ">Green 45%</td>\n    </tr>\n    <tr>\n        <td " + TD_ATTR + ">Silver 30%</td>\n        <td " + TD_ATTR + ">White 20%(?)</td>\n        <td " + TD_ATTR + ">Yellow 20%</td>\n    </tr>\n    <tr>\n        <td " + TD_ATTR + ">Gold 20%</td>\n        <td " + TD_ATTR + ">Black 10%(?)</td>\n        <td " + TD_ATTR + ">Orange 15%</td>\n    </tr>\n    <tr> <td/> <td/> <td " + TD_ATTR + ">Red 10%</td> </tr>\n    <tr> <td/> <td/> <td " + TD_ATTR + ">Purple 8%</td> </tr>\n    <tr> <td/> <td/> <td " + TD_ATTR + ">Blue 2%</td> </tr>\n</table>\n<b>\n    <br>\n    Misc:<br>\n    Ooze (Material), Sludge (Trinkets), Goo (Food)\n</b>";
 
 AH_BUTTON_SPACING = '140px';
 
@@ -42,12 +49,13 @@ HILO_CLICK_MIN = 200;
 
 HILO_CLICK_MAX = 1000;
 
+BBB_BLINK_TIMEOUT = 250;
+
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
 findMatches("a.navbar[href*=crossroads]").after('<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/transmute\'>\n    Alchemy (Transmute)\n</a>\n<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/create\'>\n    Alchemy (Create)\n</a>');
 
 if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)) {
-  BLINK_TIMEOUT = 250;
   if (findMatches("input[value='Collect!']", 0, 1).length) {
     blinker = setInterval((function() {
       if (document.title === 'Ready!') {
@@ -55,11 +63,18 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
       } else {
         return document.title = 'Ready!';
       }
-    }), BLINK_TIMEOUT);
+    }), BBB_BLINK_TIMEOUT);
     window.onfocus = function() {
       clearInterval(blinker);
       return document.title = 'Done.';
     };
+  }
+  if ((new RegExp('/baldwin/create')).test(window.location.href)) {
+    bubble = findMatches('.baldwin-create-speech-bubble', 1, 1);
+    instruct = findMatches('.baldwin-create-instruct', 1, 1);
+    bubble.css('padding', '5px').css('right', 'inherit');
+    instruct.css('background', 'inherit');
+    bubble.html(BBB_GUIDE);
   }
 } else if ((new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)) {
   setTimeout((function() {
