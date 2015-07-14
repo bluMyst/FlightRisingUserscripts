@@ -1,12 +1,16 @@
 CFLAGS=-bc
 CC=coffee
 
+OSNAME:=$(shell uname -o)
+
 ifeq ($(OS),Windows_NT)
-    ifeq ($(OSTYPE),cygwin)
+    ifeq ($(OSNAME),Cygwin)
         CAT=cat
     else
         CAT=type
     endif
+else
+    CAT=cat
 endif
 
 # don't remove intermediate files
