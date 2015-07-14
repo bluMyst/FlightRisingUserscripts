@@ -1,6 +1,14 @@
 CFLAGS=-bc
 CC=coffee
 
+ifeq ($(OS),Windows_NT)
+    ifeq ($(OSTYPE),cygwin)
+        CAT=cat
+    else
+        CAT=type
+    endif
+endif
+
 # don't remove intermediate files
 .SECONDARY:
 
@@ -14,7 +22,7 @@ all: *.js
 # The sandbox is meant to be pasted right into a javascript console
 # so ahtoLib is automatically included.
 sandbox: sandbox.js
-	cat ahtoLib.js sandbox.js | clip
+	$(CAT) ahtoLib.js sandbox.js | clip
 
 %: %.js
 	clip < $<
