@@ -1,7 +1,9 @@
+# vim: foldmethod=marker
+# Consts {{{1
 TREASURE=0
 GEMS=1
 
-class FormData
+class FormData # {{{1
     constructor: (@form) ->
 
     field: (name, newValue) ->
@@ -70,13 +72,19 @@ browseAllBackup = window.browseAll = (args...) ->
         url:   "includes/ah_buy_#{postData.tab}.php",
         cache: false,
     }).done((stuff) ->
+        # remove the browseAll HTML
+        # TODO Syntax error because stuff is a string and doesn't parse (?)
+        #$(stuff).find('div:nth-child(2) > script:nth-child(2)').remove()
+
         findMatches("#ah_left", 1, 1).html(stuff)
 
         # TODO This timeout is necessary but if you click too fast you can
         #      end up accidentally calling the original browseAll() instead.
+        ###
         setTimeout((->
             window.browseAll = browseAllBackup
         ), 20)
+        ###
     )
 
 ###

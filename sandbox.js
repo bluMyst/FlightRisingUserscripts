@@ -33,6 +33,7 @@ browseAllBackup = window.browseAll = function() {
   console.log.apply(console, ['browseAll called with'].concat(slice.call(args)));
   postData = {};
   postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
+  postData.page = $('#ah_left > div > img[src*="/images/layout/arrow_left"] ~ span').text();
   if ((cat = form.field('cat')).length) {
     postData.cat = cat;
   } else if ((name = form.field('name')).length) {
@@ -73,9 +74,20 @@ browseAllBackup = window.browseAll = function() {
     url: "includes/ah_buy_" + postData.tab + ".php",
     cache: false
   }).done(function(stuff) {
-    findMatches("#ah_left", 1, 1).html(stuff);
-    return setTimeout((function() {
-      return window.browseAll = browseAllBackup;
-    }), 20);
+    return findMatches("#ah_left", 1, 1).html(stuff);
+
+    /*
+    setTimeout((->
+        window.browseAll = browseAllBackup
+    ), 20)
+     */
   });
 };
+
+
+/*
+button = findMatches('input#go', 1, 1)
+button.click(->
+    browseAllBackup
+)
+ */
