@@ -15,6 +15,7 @@
 General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
+- Amount of treasure has commas in it.
 - Automatically clicks 'play again' at the HiLo game.
 
 Auction House:
@@ -74,15 +75,15 @@ AH_UPDATE_DELAY     = 2000
 
 # Set this to undefined for no default.
 # Can be TREASURE or GEMS
-AH_DEFAULT_CURRENCY = TREASURE
+AH_DEFAULT_CURRENCY = undefined
 
 # Min and max times to wait before clicking play again.
-HILO_CLICK_MIN =  200
+HILO_CLICK_MIN =  300
 HILO_CLICK_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
-# Add/remove links to the sidebar {{{1
+# General improvements {{{1
 # pm = messages link
 # ge = buy gems link
 # also alternatives since the HTML changes between www1.flightrising.com and flightrising.com
@@ -106,6 +107,21 @@ findMatches("a.navbar[href*=crossroads]").after('''
         Alchemy (Create)
     </a>
 ''')
+
+if /www1/.test(window.location.href)
+    treasureIndicator = findMatches('a.loginbar.loginlinks[title*=treasure]', 1, 1)
+    currentTreasure   = numberWithCommas safeParseInt treasureIndicator.text()
+
+    newHTML = treasureIndicator.html().replace(
+        /\d+/,
+        currentTreasure,
+    )
+
+    treasureIndicator.html(newHTML)
+else
+    treasureIndicator = findMatches('span#user_treasure', 1, 1)
+    currentTreasure   = numberWithCommas safeParseInt treasureIndicator.text()
+    treasureIndicator.text(currentTreasure)
 
 # Baldwin's Bubbling Brew {{{1
 if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)

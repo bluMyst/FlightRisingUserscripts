@@ -29,7 +29,7 @@ Baldwin's Bubbling Brew:
 - Replaces useless dialog text with a handy guide.
 - Flashes title when your brew is ready. (Leave BBB running in a background tab)
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, bubble, gems, instruct, itemNameText, listener, listings, showOnly, treasure;
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, bubble, currentTreasure, gems, instruct, itemNameText, listener, listings, newHTML, showOnly, treasure, treasureIndicator;
 
 TREASURE = 0;
 
@@ -43,9 +43,9 @@ AH_BUTTON_SPACING = '140px';
 
 AH_UPDATE_DELAY = 2000;
 
-AH_DEFAULT_CURRENCY = TREASURE;
+AH_DEFAULT_CURRENCY = void 0;
 
-HILO_CLICK_MIN = 200;
+HILO_CLICK_MIN = 300;
 
 HILO_CLICK_MAX = 1000;
 
@@ -54,6 +54,17 @@ BBB_BLINK_TIMEOUT = 250;
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
 findMatches("a.navbar[href*=crossroads]").after('<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/transmute\'>\n    Alchemy (Transmute)\n</a>\n<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/create\'>\n    Alchemy (Create)\n</a>');
+
+if (/www1/.test(window.location.href)) {
+  treasureIndicator = findMatches('a.loginbar.loginlinks[title*=treasure]', 1, 1);
+  currentTreasure = numberWithCommas(safeParseInt(treasureIndicator.text()));
+  newHTML = treasureIndicator.html().replace(/\d+/, currentTreasure);
+  treasureIndicator.html(newHTML);
+} else {
+  treasureIndicator = findMatches('span#user_treasure', 1, 1);
+  currentTreasure = numberWithCommas(safeParseInt(treasureIndicator.text()));
+  treasureIndicator.text(currentTreasure);
+}
 
 if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)) {
   if (findMatches("input[value='Collect!']", 0, 1).length) {
