@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.12.0
+// @version      1.13.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -16,6 +16,7 @@
 General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
+- Amount of treasure has commas in it.
 - Automatically clicks 'play again' at the HiLo game.
 
 Auction House:
