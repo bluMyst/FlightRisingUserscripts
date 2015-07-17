@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.13.0
+// @version      1.13.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -185,18 +185,21 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             # text if we do it like this:
             # @button.text(foo)
 
+            target = @button[0].childNodes[2]
+
+            # If our target is gone that probably means the offer expired.
+            if not target? then return
+
+            if not safeParseInt(target.textContent) == @price
+                throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
+
+            priceString   = numberWithCommas(@price)
+            priceEAString = numberWithCommas(Math.round @priceEA)
+
             if @numberOfItems > 1
-                target = @button[0].childNodes[2]
-
-                # If our target is gone that probably means the offer expired.
-                if not target? then return
-
-                if not safeParseInt(target.textContent) == @price
-                    throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
-
-                priceString   = numberWithCommas(@price)
-                priceEAString = numberWithCommas(Math.round @priceEA)
                 target.textContent = " #{priceString} (#{priceEAString} ea)"
+            else
+                target.textContent = " #{priceString}"
 
             # Give the new text some breathing room.
             @button.css('width', AH_BUTTON_SPACING)

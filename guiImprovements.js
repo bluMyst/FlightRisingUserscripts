@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.13.0
+// @version      1.13.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -112,17 +112,19 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
 
     AuctionListing.prototype.modifyElement = function() {
       var priceEAString, priceString, target;
+      target = this.button[0].childNodes[2];
+      if (target == null) {
+        return;
+      }
+      if (!safeParseInt(target.textContent) === this.price) {
+        throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
+      }
+      priceString = numberWithCommas(this.price);
+      priceEAString = numberWithCommas(Math.round(this.priceEA));
       if (this.numberOfItems > 1) {
-        target = this.button[0].childNodes[2];
-        if (target == null) {
-          return;
-        }
-        if (!safeParseInt(target.textContent) === this.price) {
-          throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
-        }
-        priceString = numberWithCommas(this.price);
-        priceEAString = numberWithCommas(Math.round(this.priceEA));
         target.textContent = " " + priceString + " (" + priceEAString + " ea)";
+      } else {
+        target.textContent = " " + priceString;
       }
       this.button.css('width', AH_BUTTON_SPACING);
       return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
