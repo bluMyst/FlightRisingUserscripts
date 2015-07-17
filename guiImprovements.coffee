@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.13.1
+// @version      1.14.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -83,6 +83,10 @@ HILO_CLICK_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
+# Functions {{{1
+exit = ->
+    throw new Error 'Not an error just exiting early'
+
 # General improvements {{{1
 # pm = messages link
 # ge = buy gems link
@@ -153,7 +157,21 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(win
     ), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX))
 # Auction House {{{1
 else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)
-    # Add a clear button for item name and put it right above the textbox.
+    getTab = -> #{{{2
+        if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
+            tab = tab[1]
+        else
+            tab =  'food'
+
+        if not tab in ['food', 'mats', 'app', 'dragons', 'fam', 'battle', 'skins', 'other']
+            throw new Error "Detected tab as invalid option #{postData.tab.toString()}."
+
+        return tab
+
+    #2}}}
+    if getTab() == 'dragons' then exit()
+
+    # Add a clear button for item name and put it right above the textbox. {{{2
     itemNameText = $('#searching > div:nth-child(1)')
     itemNameText.html(
         itemNameText.html() +
@@ -211,32 +229,21 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             # TODO Why won't this work?
             #@nameElement.css('color', '#731d08')
 
-    # Simple test for a better way to find out if the AH data gets refreshed. {{{2
-    # TODO: Only works once.
-    ###
-    if window.browseAll?
-        oldBrowseAll     = window.browseAll
-        window.browseAll = (args...) ->
-            console.log "window.browseAll() called"
-            return oldBrowseAll args...
+    class FormData # {{{2
+        constructor: (@form) ->
 
-        $(document.head).append("""
-            <script type="text/javascript">
-                window.browseAll = #{window.browseAll.toString()}
-            </script>
-        """)
+        field: (name, newValue) ->
+            # pass no newValue to get current value.
+            field = @form.find "[name=#{name}]"
 
-        console.log "window.browseAll() overwritten."
-    else
-        console.log "Couldn't find window.browseAll()"
-    ###
+            if newValue
+                return field.val(newValue)
+            else
+                return field.val()
 
     # Modify AH listings {{{2
-    #TODO: The auction house listings aren't loaded when this gets called
-    #      so I need to find an event or something. Using intervals right
-    #      now is an ugly utilitarian standin for a proper solution.
     listings = undefined
-    safeInterval((->
+    updateListings = window.updateListings = ->
         new_listings = $('#ah_left div[id*=sale]')
 
         isUpdated = (->
@@ -256,7 +263,117 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
         if isUpdated
             listings = (new AuctionListing $(i) for i in $('#ah_left div[id*=sale]'))
             i.modifyElement() for i in listings
-    ), AH_UPDATE_DELAY)
+
+    #safeInterval(updateListings, AH_UPDATE_DELAY)
+
+    # Overwrite browseAll() {{{2
+
+    form = new FormData findMatches('form#searching', 1, 1)
+
+    browseAllBackup = window.browseAll = (args...) -> # {{{3
+        console.log 'browseAll called with', args...
+        # tl = treasure low  gh = gems high
+        # Arguments are:
+        # tab, page, [maybe cat], [lohi], [maybe name], ordering, direct
+        # lohi = [treasure lohi] or [gem lohi] or [nothing]
+        # X lohi = X hi or X lo or (X lo, X hi)
+
+        # Build postData {{{4
+        postData = {}
+
+        [
+            postData.tab,
+            postData.page,
+            ...,
+            postData.ordering,
+            postData.direct,
+        ] = args
+
+        if not postData.page?
+            m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1)
+
+            if m.length
+                postData.page = m.text()
+            else
+                console.log 'No page element found, assuming only 1 page.'
+                postData.page = '1'
+
+        if not postData.tab?
+            postData.tab = getTab()
+
+        if not postData.ordering?
+            if $('img[src*="button_expiration_active.png"]').length
+                postData.ordering = 'expiration'
+            else if $('img[src*="button_price_active.png"]').length
+                postData.ordering = 'cost'
+            else
+                throw new Error "Couldn't detect ordering (expiration or price)."
+
+        if not postData.direct?
+            if $('img[src*="button_ascending_active.png"]').length
+                postData.direct = 'ASC'
+            else if $('img[src*="button_descending_active.png"]').length
+                postData.direct = 'DESC'
+            else
+                throw new Error "Couldn't detect sorting direction."
+
+        if (cat = form.field 'cat').length
+            postData.cat = cat
+
+        if (name = form.field 'name').length
+            postData.name = name
+
+        tl = form.field 'tl'
+        th = form.field 'th'
+        gl = form.field 'gl'
+        gh = form.field 'gh'
+
+        [tll, thl, gll, ghl] = [tl.length, th.length, gl.length, gh.length]
+        filledFields = 0
+
+        for i in [tll, thl, gll, ghl]
+            if i then filledFields += 1
+
+        # Defaults to treasure just like the original code does.
+        if tll or thl
+            if tll then postData.tl = tl
+            if thl then postData.th = th
+        else if gll or ghl
+            if gll then postData.gl = gl
+            if ghl then postData.gh = gh
+
+        # 4}}}
+        console.log 'Posting', postData
+        $.ajax({
+            type: "POST",
+            data:  postData,
+            url:   "includes/ah_buy_#{postData.tab}.php",
+            cache: false,
+        }).done((stuff) ->
+            # remove the browseAll HTML
+            # TODO Syntax error because stuff is a string and doesn't parse (?)
+            #$(stuff).find('div:nth-child(2) > script:nth-child(2)').remove()
+
+            findMatches("#ah_left", 1, 1).html(stuff)
+
+            # TODO This timeout is necessary but if you click too fast you can
+            #      end up accidentally calling the original browseAll() instead.
+            setTimeout((->
+                window.browseAll = browseAllBackup
+                updateListings()
+            ), 20)
+        )
+
+    # 3}}}
+    button = findMatches('input#go', 1, 1)
+    button.attr('type', 'button')
+    button.click(->
+        browseAllBackup()
+    )
+
+    setTimeout((->
+        browseAllBackup()
+    ), 200)
 
     # Filter by only gems or only treasure {{{2
     treasure =

@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.13.1
+// @version      1.14.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -30,7 +30,8 @@ Baldwin's Bubbling Brew:
 - Replaces useless dialog text with a handy guide.
 - Flashes title when your brew is ready. (Leave BBB running in a background tab)
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, bubble, currentTreasure, gems, instruct, itemNameText, listener, listings, newHTML, showOnly, treasure, treasureIndicator;
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, currentTreasure, exit, form, gems, getTab, instruct, itemNameText, listener, listings, newHTML, showOnly, treasure, treasureIndicator, updateListings,
+  slice = [].slice;
 
 TREASURE = 0;
 
@@ -51,6 +52,10 @@ HILO_CLICK_MIN = 300;
 HILO_CLICK_MAX = 1000;
 
 BBB_BLINK_TIMEOUT = 250;
+
+exit = function() {
+  throw new Error('Not an error just exiting early');
+};
 
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
@@ -97,6 +102,21 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     }
   }), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX));
 } else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)) {
+  getTab = function() {
+    var ref, tab;
+    if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
+      tab = tab[1];
+    } else {
+      tab = 'food';
+    }
+    if ((ref = !tab) === 'food' || ref === 'mats' || ref === 'app' || ref === 'dragons' || ref === 'fam' || ref === 'battle' || ref === 'skins' || ref === 'other') {
+      throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
+    }
+    return tab;
+  };
+  if (getTab() === 'dragons') {
+    exit();
+  }
   itemNameText = $('#searching > div:nth-child(1)');
   itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
   AuctionListing = (function() {
@@ -133,26 +153,26 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     return AuctionListing;
 
   })();
+  FormData = (function() {
+    function FormData(form1) {
+      this.form = form1;
+    }
 
-  /*
-  if window.browseAll?
-      oldBrowseAll     = window.browseAll
-      window.browseAll = (args...) ->
-          console.log "window.browseAll() called"
-          return oldBrowseAll args...
-  
-      $(document.head).append("""
-          <script type="text/javascript">
-              window.browseAll = #{window.browseAll.toString()}
-          </script>
-      """)
-  
-      console.log "window.browseAll() overwritten."
-  else
-      console.log "Couldn't find window.browseAll()"
-   */
+    FormData.prototype.field = function(name, newValue) {
+      var field;
+      field = this.form.find("[name=" + name + "]");
+      if (newValue) {
+        return field.val(newValue);
+      } else {
+        return field.val();
+      }
+    };
+
+    return FormData;
+
+  })();
   listings = void 0;
-  safeInterval((function() {
+  updateListings = window.updateListings = function() {
     var i, isUpdated, j, len, new_listings, results;
     new_listings = $('#ah_left div[id*=sale]');
     isUpdated = (function() {
@@ -188,7 +208,100 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
       }
       return results;
     }
-  }), AH_UPDATE_DELAY);
+  };
+  form = new FormData(findMatches('form#searching', 1, 1));
+  browseAllBackup = window.browseAll = function() {
+    var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, m, name, postData, ref, ref1, th, thl, tl, tll;
+    args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+    console.log.apply(console, ['browseAll called with'].concat(slice.call(args)));
+    postData = {};
+    postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
+    if (postData.page == null) {
+      m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1);
+      if (m.length) {
+        postData.page = m.text();
+      } else {
+        console.log('No page element found, assuming only 1 page.');
+        postData.page = '1';
+      }
+    }
+    if (postData.tab == null) {
+      postData.tab = getTab();
+    }
+    if (postData.ordering == null) {
+      if ($('img[src*="button_expiration_active.png"]').length) {
+        postData.ordering = 'expiration';
+      } else if ($('img[src*="button_price_active.png"]').length) {
+        postData.ordering = 'cost';
+      } else {
+        throw new Error("Couldn't detect ordering (expiration or price).");
+      }
+    }
+    if (postData.direct == null) {
+      if ($('img[src*="button_ascending_active.png"]').length) {
+        postData.direct = 'ASC';
+      } else if ($('img[src*="button_descending_active.png"]').length) {
+        postData.direct = 'DESC';
+      } else {
+        throw new Error("Couldn't detect sorting direction.");
+      }
+    }
+    if ((cat = form.field('cat')).length) {
+      postData.cat = cat;
+    }
+    if ((name = form.field('name')).length) {
+      postData.name = name;
+    }
+    tl = form.field('tl');
+    th = form.field('th');
+    gl = form.field('gl');
+    gh = form.field('gh');
+    ref = [tl.length, th.length, gl.length, gh.length], tll = ref[0], thl = ref[1], gll = ref[2], ghl = ref[3];
+    filledFields = 0;
+    ref1 = [tll, thl, gll, ghl];
+    for (k = 0, len = ref1.length; k < len; k++) {
+      i = ref1[k];
+      if (i) {
+        filledFields += 1;
+      }
+    }
+    if (tll || thl) {
+      if (tll) {
+        postData.tl = tl;
+      }
+      if (thl) {
+        postData.th = th;
+      }
+    } else if (gll || ghl) {
+      if (gll) {
+        postData.gl = gl;
+      }
+      if (ghl) {
+        postData.gh = gh;
+      }
+    }
+    console.log('Posting', postData);
+    return $.ajax({
+      type: "POST",
+      data: postData,
+      url: "includes/ah_buy_" + postData.tab + ".php",
+      cache: false
+    }).done(function(stuff) {
+      findMatches("#ah_left", 1, 1).html(stuff);
+      return setTimeout((function() {
+        window.browseAll = browseAllBackup;
+        return updateListings();
+      }), 20);
+    });
+  };
+  button = findMatches('input#go', 1, 1);
+  button.attr('type', 'button');
+  button.click(function() {
+    return browseAllBackup();
+  });
+  setTimeout((function() {
+    return browseAllBackup();
+  }), 200);
   treasure = {
     img: findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
     low: findMatches('input[name=tl]', 1, 1),
