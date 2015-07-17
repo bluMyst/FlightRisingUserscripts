@@ -83,6 +83,10 @@ HILO_CLICK_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
+# Functions {{{1
+exit = ->
+    throw new Error 'Not an error just exiting early'
+
 # General improvements {{{1
 # pm = messages link
 # ge = buy gems link
@@ -153,7 +157,21 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(win
     ), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX))
 # Auction House {{{1
 else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)
-    # Add a clear button for item name and put it right above the textbox.
+    getTab = -> #{{{2
+        if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
+            tab = tab[1]
+        else
+            tab =  'food'
+
+        if not tab in ['food', 'mats', 'app', 'dragons', 'fam', 'battle', 'skins', 'other']
+            throw new Error "Detected tab as invalid option #{postData.tab.toString()}."
+
+        return tab
+
+    #2}}}
+    if getTab() == 'dragons' then exit()
+
+    # Add a clear button for item name and put it right above the textbox. {{{2
     itemNameText = $('#searching > div:nth-child(1)')
     itemNameText.html(
         itemNameText.html() +
@@ -163,8 +181,6 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             </a>
         '''
     )
-
-    # Overwrite browseAll() function with our own.
 
     class AuctionListing # {{{2
         constructor: (@element) ->
@@ -248,9 +264,10 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
     #safeInterval(updateListings, AH_UPDATE_DELAY)
 
     # Overwrite browseAll() {{{2
+
     form = new FormData findMatches('form#searching', 1, 1)
 
-    browseAllBackup = window.browseAll = (args...) ->
+    browseAllBackup = window.browseAll = (args...) -> # {{{3
         console.log 'browseAll called with', args...
         # tl = treasure low  gh = gems high
         # Arguments are:
@@ -258,7 +275,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
         # lohi = [treasure lohi] or [gem lohi] or [nothing]
         # X lohi = X hi or X lo or (X lo, X hi)
 
-        # Build postData {{{3
+        # Build postData {{{4
         postData = {}
 
         [
@@ -279,13 +296,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
                 postData.page = '1'
 
         if not postData.tab?
-            if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
-                postData.tab = tab[1]
-            else
-                postData.tab = 'food'
-
-            if not postData.tab in ['food', 'mats', 'app', 'dragons', 'fam', 'battle', 'skins', 'other']
-                throw new Error "Detected tab as invalid option #{postData.tab.toString()}."
+            postData.tab = getTab()
 
         if not postData.ordering?
             if $('img[src*="button_expiration_active.png"]').length
@@ -305,7 +316,8 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
 
         if (cat = form.field 'cat').length
             postData.cat = cat
-        else if (name = form.field 'name').length
+
+        if (name = form.field 'name').length
             postData.name = name
 
         tl = form.field 'tl'
@@ -327,7 +339,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             if gll then postData.gl = gl
             if ghl then postData.gh = gh
 
-        # 3}}}
+        # 4}}}
         console.log 'Posting', postData
         $.ajax({
             type: "POST",
@@ -349,6 +361,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(win
             ), 20)
         )
 
+    # 3}}}
     button = findMatches('input#go', 1, 1)
     button.attr('type', 'button')
     button.click(->

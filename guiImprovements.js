@@ -30,7 +30,7 @@ Baldwin's Bubbling Brew:
 - Replaces useless dialog text with a handy guide.
 - Flashes title when your brew is ready. (Leave BBB running in a background tab)
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, currentTreasure, form, gems, instruct, itemNameText, listener, listings, newHTML, showOnly, treasure, treasureIndicator, updateListings,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, currentTreasure, exit, form, gems, getTab, instruct, itemNameText, listener, listings, newHTML, showOnly, treasure, treasureIndicator, updateListings,
   slice = [].slice;
 
 TREASURE = 0;
@@ -52,6 +52,10 @@ HILO_CLICK_MIN = 300;
 HILO_CLICK_MAX = 1000;
 
 BBB_BLINK_TIMEOUT = 250;
+
+exit = function() {
+  throw new Error('Not an error just exiting early');
+};
 
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
@@ -98,6 +102,21 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     }
   }), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX));
 } else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)) {
+  getTab = function() {
+    var ref, tab;
+    if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
+      tab = tab[1];
+    } else {
+      tab = 'food';
+    }
+    if ((ref = !tab) === 'food' || ref === 'mats' || ref === 'app' || ref === 'dragons' || ref === 'fam' || ref === 'battle' || ref === 'skins' || ref === 'other') {
+      throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
+    }
+    return tab;
+  };
+  if (getTab() === 'dragons') {
+    exit();
+  }
   itemNameText = $('#searching > div:nth-child(1)');
   itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
   AuctionListing = (function() {
@@ -190,7 +209,7 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
   };
   form = new FormData(findMatches('form#searching', 1, 1));
   browseAllBackup = window.browseAll = function() {
-    var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, m, name, postData, ref, ref1, ref2, tab, th, thl, tl, tll;
+    var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, m, name, postData, ref, ref1, th, thl, tl, tll;
     args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
     console.log.apply(console, ['browseAll called with'].concat(slice.call(args)));
     postData = {};
@@ -205,14 +224,7 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
       }
     }
     if (postData.tab == null) {
-      if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
-        postData.tab = tab[1];
-      } else {
-        postData.tab = 'food';
-      }
-      if ((ref = !postData.tab) === 'food' || ref === 'mats' || ref === 'app' || ref === 'dragons' || ref === 'fam' || ref === 'battle' || ref === 'skins' || ref === 'other') {
-        throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
-      }
+      postData.tab = getTab();
     }
     if (postData.ordering == null) {
       if ($('img[src*="button_expiration_active.png"]').length) {
@@ -234,18 +246,19 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     }
     if ((cat = form.field('cat')).length) {
       postData.cat = cat;
-    } else if ((name = form.field('name')).length) {
+    }
+    if ((name = form.field('name')).length) {
       postData.name = name;
     }
     tl = form.field('tl');
     th = form.field('th');
     gl = form.field('gl');
     gh = form.field('gh');
-    ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
+    ref = [tl.length, th.length, gl.length, gh.length], tll = ref[0], thl = ref[1], gll = ref[2], ghl = ref[3];
     filledFields = 0;
-    ref2 = [tll, thl, gll, ghl];
-    for (k = 0, len = ref2.length; k < len; k++) {
-      i = ref2[k];
+    ref1 = [tll, thl, gll, ghl];
+    for (k = 0, len = ref1.length; k < len; k++) {
+      i = ref1[k];
       if (i) {
         filledFields += 1;
       }
