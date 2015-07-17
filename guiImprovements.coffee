@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.14.0
+// @version      1.15.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -15,7 +15,7 @@
 General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
-- Amount of treasure has commas in it.
+- Adds commas to various numbers around the site.
 - Automatically clicks 'play again' at the HiLo game.
 
 Auction House:
@@ -23,7 +23,6 @@ Auction House:
 - Tells you how much items cost per unit.
 - Adds a clear item name button.
 - Clicking an item's name sets that to the name filter.
-- Prices have commas in them.
 
 Baldwin's Bubbling Brew:
 - Replaces useless dialog text with a handy guide.
@@ -149,6 +148,13 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
         bubble.css('padding', '5px').css('right', 'inherit')
         instruct.css('background', 'inherit')
         bubble.html BBB_GUIDE
+# Marketplace {{{1
+if (new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(window.location.href)
+    for price in findMatches('#market > div > div:nth-child(3) > div:nth-child(4)', 1)
+        price = $(price)
+        price.text(
+            numberWithCommas safeParseInt price.text()
+        )
 # HiLo Game {{{1
 else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)
     setTimeout((->
@@ -156,7 +162,7 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(win
             if playAgain.length then playAgain.click()
     ), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX))
 # Auction House {{{1
-else if (new RegExp('http://flightrising\.com/main\.php.*p=ah.*', 'i')).test(window.location.href)
+else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(window.location.href)
     getTab = -> #{{{2
         if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
             tab = tab[1]
