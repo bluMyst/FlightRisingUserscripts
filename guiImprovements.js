@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.15.0
+// @version      1.16.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -17,7 +17,6 @@ General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
 - Adds commas to various numbers around the site.
-- Automatically clicks 'play again' at the HiLo game.
 
 Auction House:
 - Clicking the icons next to price ranges will let you sort by only treasure or only gems.
@@ -28,8 +27,12 @@ Auction House:
 Baldwin's Bubbling Brew:
 - Replaces useless dialog text with a handy guide.
 - Flashes title when your brew is ready. (Leave BBB running in a background tab)
+
+Higher or Lower game:
+- Automatically clicks 'play again'.
+- Added keyboard shortcuts for each of the guesses.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, currentTreasure, exit, form, gems, getTab, instruct, itemNameText, j, len, listener, listings, newHTML, price, ref, showOnly, treasure, treasureIndicator, updateListings,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, buttonHi, buttonLo, currentTreasure, exit, form, gems, getTab, guesses, instruct, itemNameText, j, len, listener, listings, newHTML, playAgain, price, ref, showOnly, treasure, treasureIndicator, updateListings,
   slice = [].slice;
 
 TREASURE = 0;
@@ -102,13 +105,29 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     price.text(numberWithCommas(safeParseInt(price.text())));
   }
 } else if ((new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)) {
-  setTimeout((function() {
-    var playAgain;
+  guesses = parseInt(findMatches('#super-container > div:nth-child(2) > div:nth-child(4) > div:nth-child(2)', 1, 1).text());
+  if (guesses > 0) {
     playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
     if (playAgain.length) {
-      return playAgain.click();
+      setTimeout((function() {
+        return playAgain.click();
+      }), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX));
+    } else {
+      findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.');
+      buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1);
+      buttonHi = findMatches('map[name=hilo_map] > area[href*="choice=hi"]', 1, 1);
+      $(document).keypress(function(e) {
+        switch (String.fromCharCode(e.charCode).toLowerCase()) {
+          case 'j':
+            return buttonLo.click();
+          case 'k':
+            return buttonHi.click();
+          default:
+            return console.log("Got unrechognized charCode: " + e.charCode);
+        }
+      });
     }
-  }), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX));
+  }
 } else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(window.location.href)) {
   getTab = function() {
     var ref1, tab;
@@ -122,240 +141,239 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     }
     return tab;
   };
-  if (getTab() === 'dragons') {
-    exit();
-  }
-  itemNameText = $('#searching > div:nth-child(1)');
-  itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
-  AuctionListing = (function() {
-    function AuctionListing(element) {
-      this.element = element;
-      this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
-      this.button = this.element.find('[id*=buy_button]');
-      this.price = safeParseInt(this.button.text());
-      this.priceEA = this.price / this.numberOfItems;
-      this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
-      this.name = this.nameElement.text();
-    }
-
-    AuctionListing.prototype.modifyElement = function() {
-      var priceEAString, priceString, target;
-      target = this.button[0].childNodes[2];
-      if (target == null) {
-        return;
+  if (getTab() !== 'dragons') {
+    itemNameText = $('#searching > div:nth-child(1)');
+    itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
+    AuctionListing = (function() {
+      function AuctionListing(element) {
+        this.element = element;
+        this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
+        this.button = this.element.find('[id*=buy_button]');
+        this.price = safeParseInt(this.button.text());
+        this.priceEA = this.price / this.numberOfItems;
+        this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
+        this.name = this.nameElement.text();
       }
-      if (!safeParseInt(target.textContent) === this.price) {
-        throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
-      }
-      priceString = numberWithCommas(this.price);
-      priceEAString = numberWithCommas(Math.round(this.priceEA));
-      if (this.numberOfItems > 1) {
-        target.textContent = " " + priceString + " (" + priceEAString + " ea)";
-      } else {
-        target.textContent = " " + priceString;
-      }
-      this.button.css('width', AH_BUTTON_SPACING);
-      return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
-    };
 
-    return AuctionListing;
+      AuctionListing.prototype.modifyElement = function() {
+        var priceEAString, priceString, target;
+        target = this.button[0].childNodes[2];
+        if (target == null) {
+          return;
+        }
+        if (!safeParseInt(target.textContent) === this.price) {
+          throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
+        }
+        priceString = numberWithCommas(this.price);
+        priceEAString = numberWithCommas(Math.round(this.priceEA));
+        if (this.numberOfItems > 1) {
+          target.textContent = " " + priceString + " (" + priceEAString + " ea)";
+        } else {
+          target.textContent = " " + priceString;
+        }
+        this.button.css('width', AH_BUTTON_SPACING);
+        return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
+      };
 
-  })();
-  FormData = (function() {
-    function FormData(form1) {
-      this.form = form1;
-    }
+      return AuctionListing;
 
-    FormData.prototype.field = function(name, newValue) {
-      var field;
-      field = this.form.find("[name=" + name + "]");
-      if (newValue) {
-        return field.val(newValue);
-      } else {
-        return field.val();
+    })();
+    FormData = (function() {
+      function FormData(form1) {
+        this.form = form1;
       }
-    };
 
-    return FormData;
+      FormData.prototype.field = function(name, newValue) {
+        var field;
+        field = this.form.find("[name=" + name + "]");
+        if (newValue) {
+          return field.val(newValue);
+        } else {
+          return field.val();
+        }
+      };
 
-  })();
-  listings = void 0;
-  updateListings = window.updateListings = function() {
-    var i, isUpdated, k, len1, new_listings, results;
-    new_listings = $('#ah_left div[id*=sale]');
-    isUpdated = (function() {
-      var i, k, ref1;
-      if (listings == null) {
-        return true;
-      }
-      if (new_listings.length === 0 || listings.length === 0) {
-        return false;
-      }
-      for (i = k = 0, ref1 = listings.length; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
-        if (listings[i].element[0] !== new_listings[i]) {
+      return FormData;
+
+    })();
+    listings = void 0;
+    updateListings = window.updateListings = function() {
+      var i, isUpdated, k, len1, new_listings, results;
+      new_listings = $('#ah_left div[id*=sale]');
+      isUpdated = (function() {
+        var i, k, ref1;
+        if (listings == null) {
           return true;
         }
-      }
-      return false;
-    })();
-    if (isUpdated) {
-      listings = (function() {
-        var k, len1, ref1, results;
-        ref1 = $('#ah_left div[id*=sale]');
+        if (new_listings.length === 0 || listings.length === 0) {
+          return false;
+        }
+        for (i = k = 0, ref1 = listings.length; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
+          if (listings[i].element[0] !== new_listings[i]) {
+            return true;
+          }
+        }
+        return false;
+      })();
+      if (isUpdated) {
+        listings = (function() {
+          var k, len1, ref1, results;
+          ref1 = $('#ah_left div[id*=sale]');
+          results = [];
+          for (k = 0, len1 = ref1.length; k < len1; k++) {
+            i = ref1[k];
+            results.push(new AuctionListing($(i)));
+          }
+          return results;
+        })();
         results = [];
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          i = ref1[k];
-          results.push(new AuctionListing($(i)));
+        for (k = 0, len1 = listings.length; k < len1; k++) {
+          i = listings[k];
+          results.push(i.modifyElement());
         }
         return results;
-      })();
-      results = [];
-      for (k = 0, len1 = listings.length; k < len1; k++) {
-        i = listings[k];
-        results.push(i.modifyElement());
       }
-      return results;
-    }
-  };
-  form = new FormData(findMatches('form#searching', 1, 1));
-  browseAllBackup = window.browseAll = function() {
-    var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, m, name, postData, ref1, ref2, th, thl, tl, tll;
-    args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-    console.log.apply(console, ['browseAll called with'].concat(slice.call(args)));
-    postData = {};
-    postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
-    if (postData.page == null) {
-      m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1);
-      if (m.length) {
-        postData.page = m.text();
-      } else {
-        console.log('No page element found, assuming only 1 page.');
-        postData.page = '1';
+    };
+    form = new FormData(findMatches('form#searching', 1, 1));
+    browseAllBackup = window.browseAll = function() {
+      var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, m, name, postData, ref1, ref2, th, thl, tl, tll;
+      args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+      console.log('browseAll called with', args);
+      postData = {};
+      postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
+      if (postData.page == null) {
+        m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1);
+        if (m.length) {
+          postData.page = m.text();
+        } else {
+          console.log('No page element found, assuming only 1 page.');
+          postData.page = '1';
+        }
       }
-    }
-    if (postData.tab == null) {
-      postData.tab = getTab();
-    }
-    if (postData.ordering == null) {
-      if ($('img[src*="button_expiration_active.png"]').length) {
-        postData.ordering = 'expiration';
-      } else if ($('img[src*="button_price_active.png"]').length) {
-        postData.ordering = 'cost';
-      } else {
-        throw new Error("Couldn't detect ordering (expiration or price).");
+      if (postData.tab == null) {
+        postData.tab = getTab();
       }
-    }
-    if (postData.direct == null) {
-      if ($('img[src*="button_ascending_active.png"]').length) {
-        postData.direct = 'ASC';
-      } else if ($('img[src*="button_descending_active.png"]').length) {
-        postData.direct = 'DESC';
-      } else {
-        throw new Error("Couldn't detect sorting direction.");
+      if (postData.ordering == null) {
+        if ($('img[src*="button_expiration_active.png"]').length) {
+          postData.ordering = 'expiration';
+        } else if ($('img[src*="button_price_active.png"]').length) {
+          postData.ordering = 'cost';
+        } else {
+          throw new Error("Couldn't detect ordering (expiration or price).");
+        }
       }
-    }
-    if ((cat = form.field('cat')).length) {
-      postData.cat = cat;
-    }
-    if ((name = form.field('name')).length) {
-      postData.name = name;
-    }
-    tl = form.field('tl');
-    th = form.field('th');
-    gl = form.field('gl');
-    gh = form.field('gh');
-    ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
-    filledFields = 0;
-    ref2 = [tll, thl, gll, ghl];
-    for (l = 0, len1 = ref2.length; l < len1; l++) {
-      i = ref2[l];
-      if (i) {
-        filledFields += 1;
+      if (postData.direct == null) {
+        if ($('img[src*="button_ascending_active.png"]').length) {
+          postData.direct = 'ASC';
+        } else if ($('img[src*="button_descending_active.png"]').length) {
+          postData.direct = 'DESC';
+        } else {
+          throw new Error("Couldn't detect sorting direction.");
+        }
       }
-    }
-    if (tll || thl) {
-      if (tll) {
-        postData.tl = tl;
+      if ((cat = form.field('cat')).length) {
+        postData.cat = cat;
       }
-      if (thl) {
-        postData.th = th;
+      if ((name = form.field('name')).length) {
+        postData.name = name;
       }
-    } else if (gll || ghl) {
-      if (gll) {
-        postData.gl = gl;
+      tl = form.field('tl');
+      th = form.field('th');
+      gl = form.field('gl');
+      gh = form.field('gh');
+      ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
+      filledFields = 0;
+      ref2 = [tll, thl, gll, ghl];
+      for (l = 0, len1 = ref2.length; l < len1; l++) {
+        i = ref2[l];
+        if (i) {
+          filledFields += 1;
+        }
       }
-      if (ghl) {
-        postData.gh = gh;
+      if (tll || thl) {
+        if (tll) {
+          postData.tl = tl;
+        }
+        if (thl) {
+          postData.th = th;
+        }
+      } else if (gll || ghl) {
+        if (gll) {
+          postData.gl = gl;
+        }
+        if (ghl) {
+          postData.gh = gh;
+        }
       }
-    }
-    console.log('Posting', postData);
-    return $.ajax({
-      type: "POST",
-      data: postData,
-      url: "includes/ah_buy_" + postData.tab + ".php",
-      cache: false
-    }).done(function(stuff) {
-      findMatches("#ah_left", 1, 1).html(stuff);
-      return setTimeout((function() {
-        window.browseAll = browseAllBackup;
-        return updateListings();
-      }), 20);
+      console.log('Posting', postData);
+      return $.ajax({
+        type: "POST",
+        data: postData,
+        url: "includes/ah_buy_" + postData.tab + ".php",
+        cache: false
+      }).done(function(stuff) {
+        findMatches("#ah_left", 1, 1).html(stuff);
+        return setTimeout((function() {
+          window.browseAll = browseAllBackup;
+          return updateListings();
+        }), 20);
+      });
+    };
+    button = findMatches('input#go', 1, 1);
+    button.attr('type', 'button');
+    button.click(function() {
+      return browseAllBackup();
     });
-  };
-  button = findMatches('input#go', 1, 1);
-  button.attr('type', 'button');
-  button.click(function() {
-    return browseAllBackup();
-  });
-  setTimeout((function() {
-    return browseAllBackup();
-  }), 200);
-  treasure = {
-    img: findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
-    low: findMatches('input[name=tl]', 1, 1),
-    high: findMatches('input[name=th]', 1, 1)
-  };
-  gems = {
-    img: findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1),
-    low: findMatches('input[name=gl]', 1, 1),
-    high: findMatches('input[name=gh]', 1, 1)
-  };
-  showOnly = function(currency) {
-    var ref1, ref2, them, us;
-    if (currency === TREASURE) {
-      ref1 = [treasure, gems], us = ref1[0], them = ref1[1];
-    } else if (currency === GEMS) {
-      ref2 = [gems, treasure], us = ref2[0], them = ref2[1];
-    } else {
-      throw new Error("showOnly called with invalid currency: " + currency);
+    setTimeout((function() {
+      return browseAllBackup();
+    }), 400);
+    treasure = {
+      img: findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
+      low: findMatches('input[name=tl]', 1, 1),
+      high: findMatches('input[name=th]', 1, 1)
+    };
+    gems = {
+      img: findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1),
+      low: findMatches('input[name=gl]', 1, 1),
+      high: findMatches('input[name=gh]', 1, 1)
+    };
+    showOnly = function(currency) {
+      var ref1, ref2, them, us;
+      if (currency === TREASURE) {
+        ref1 = [treasure, gems], us = ref1[0], them = ref1[1];
+      } else if (currency === GEMS) {
+        ref2 = [gems, treasure], us = ref2[0], them = ref2[1];
+      } else {
+        throw new Error("showOnly called with invalid currency: " + currency);
+      }
+      if (us.low.val() !== '' || us.high.val() !== '') {
+        us.low.val('');
+        us.high.val('');
+      } else {
+        us.low.val('0');
+        us.high.val('99999999999999999999');
+      }
+      if (them.low.val() !== '' || them.high.val() !== '') {
+        them.low.val('');
+        return them.high.val('');
+      }
+    };
+    listener = function(event) {
+      if (event.currentTarget === treasure.img[0]) {
+        return showOnly(TREASURE);
+      } else if (event.currentTarget === gems.img[0]) {
+        return showOnly(GEMS);
+      } else {
+        throw new Error('Something in the auction house code has gone horribly wrong.');
+      }
+    };
+    if (AH_DEFAULT_CURRENCY != null) {
+      showOnly(AH_DEFAULT_CURRENCY);
+      findMatches('input[type=submit]', 1, 1).click();
     }
-    if (us.low.val() !== '' || us.high.val() !== '') {
-      us.low.val('');
-      us.high.val('');
-    } else {
-      us.low.val('0');
-      us.high.val('99999999999999999999');
-    }
-    if (them.low.val() !== '' || them.high.val() !== '') {
-      them.low.val('');
-      return them.high.val('');
-    }
-  };
-  listener = function(event) {
-    if (event.currentTarget === treasure.img[0]) {
-      return showOnly(TREASURE);
-    } else if (event.currentTarget === gems.img[0]) {
-      return showOnly(GEMS);
-    } else {
-      throw new Error('Something in the auction house code has gone horribly wrong.');
-    }
-  };
-  if (AH_DEFAULT_CURRENCY != null) {
-    showOnly(AH_DEFAULT_CURRENCY);
-    findMatches('input[type=submit]', 1, 1).click();
+    treasure.img.click(listener);
+    gems.img.click(listener);
+    treasure.img.css('cursor', 'pointer');
+    gems.img.css('cursor', 'pointer');
   }
-  treasure.img.click(listener);
-  gems.img.click(listener);
-  treasure.img.css('cursor', 'pointer');
-  gems.img.css('cursor', 'pointer');
 }
