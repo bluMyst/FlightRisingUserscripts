@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.16.0
+// @version      1.17.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -33,7 +33,7 @@ Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, blinker, bondButton, browseAllBackup, bubble, button, buttonHi, buttonLo, currentTreasure, exit, form, gems, getTab, guesses, instruct, itemNameText, j, len, listener, listings, newHTML, playAgain, price, ref, showOnly, treasure, treasureIndicator, updateListings,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, newHTML, scriptHandler, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -60,6 +60,46 @@ exit = function() {
   throw new Error('Not an error just exiting early');
 };
 
+UsersubscriptHandler = (function() {
+
+  /*
+   * Handles 'usersubscripts', like a userscript but embedded in this bigger
+   * userscript. Another way to think about it is, this object runs certain
+   * functions if certain associated regexes match.
+   */
+  function UsersubscriptHandler() {
+    this.scripts = [];
+  }
+
+  UsersubscriptHandler.prototype.register = function(regex, func) {
+    if (typeof regex === 'string') {
+      regex = new RegExp(regex);
+    }
+    return this.scripts.push({
+      regex: regex,
+      func: func
+    });
+  };
+
+  UsersubscriptHandler.prototype.think = function() {
+    var j, len, ref, results, script;
+    ref = this.scripts;
+    results = [];
+    for (j = 0, len = ref.length; j < len; j++) {
+      script = ref[j];
+      if (script.regex.test(window.location.href)) {
+        results.push(script.func());
+      } else {
+        results.push(void 0);
+      }
+    }
+    return results;
+  };
+
+  return UsersubscriptHandler;
+
+})();
+
 findMatches('a.navbar[href=\'main.php?p=pm\'],\na.navbar[href*=\'msgs\'],\na.navbar[href=\'main.php?p=ge\'],\na.navbar[href*=\'buy-gems\']', 2, 2).remove();
 
 findMatches("a.navbar[href*=crossroads]").after('<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/transmute\'>\n    Alchemy (Transmute)\n</a>\n<a class=\'navbar navbar-glow-hover\' href=\'http://www1.flightrising.com/trading/baldwin/create\'>\n    Alchemy (Create)\n</a>');
@@ -75,7 +115,10 @@ if (/www1/.test(window.location.href)) {
   treasureIndicator.text(currentTreasure);
 }
 
-if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)) {
+scriptHandler = new UsersubscriptHandler();
+
+baldwinsBubblingBrew = function() {
+  var blinker, bubble, instruct;
   if (findMatches("input[value='Collect!']", 0, 1).length) {
     blinker = setInterval((function() {
       if (document.title === 'Ready!') {
@@ -86,7 +129,7 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     }), BBB_BLINK_TIMEOUT);
     window.onfocus = function() {
       clearInterval(blinker);
-      return document.title = 'Done.';
+      return document.title = 'Ready!';
     };
   }
   if ((new RegExp('/baldwin/create')).test(window.location.href)) {
@@ -94,30 +137,40 @@ if ((new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(w
     instruct = findMatches('.baldwin-create-instruct', 1, 1);
     bubble.css('padding', '5px').css('right', 'inherit');
     instruct.css('background', 'inherit');
-    bubble.html(BBB_GUIDE);
+    return bubble.html(BBB_GUIDE);
   }
-}
+};
 
-if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(window.location.href)) {
+scriptHandler.register(new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'), baldwinsBubblingBrew);
+
+marketplace = function() {
+  var j, len, price, ref, results;
   ref = findMatches('#market > div > div:nth-child(3) > div:nth-child(4)', 1);
+  results = [];
   for (j = 0, len = ref.length; j < len; j++) {
     price = ref[j];
     price = $(price);
-    price.text(numberWithCommas(safeParseInt(price.text())));
+    results.push(price.text(numberWithCommas(safeParseInt(price.text()))));
   }
-} else if ((new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)) {
+  return results;
+};
+
+scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'), marketplace);
+
+hiloGame = function() {
+  var buttonHi, buttonLo, guesses, playAgain;
   guesses = parseInt(findMatches('#super-container > div:nth-child(2) > div:nth-child(4) > div:nth-child(2)', 1, 1).text());
   if (guesses > 0) {
     playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
     if (playAgain.length) {
-      setTimeout((function() {
+      return setTimeout((function() {
         return playAgain.click();
       }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
     } else {
       findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.');
       buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1);
       buttonHi = findMatches('map[name=hilo_map] > area[href*="choice=hi"]', 1, 1);
-      $(document).keypress(function(e) {
+      return $(document).keypress(function(e) {
         switch (String.fromCharCode(e.charCode).toLowerCase()) {
           case 'j':
             return buttonLo.click();
@@ -129,24 +182,34 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
       });
     }
   }
-} else if ((new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')).test(window.location.href)) {
+};
+
+scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i'), hiloGame);
+
+lair = function() {
+  var bondButton;
   if ((bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length) {
-    setTimeout((function() {
+    return setTimeout((function() {
       bondButton.click();
       return setTimeout((function() {
         return findMatches('button#no', 1, 1).click();
       }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
     }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
   }
-} else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(window.location.href)) {
+};
+
+scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'), lair);
+
+auctionHouse = function() {
+  var AuctionListing, FormData, browseAllBackup, button, form, gems, getTab, itemNameText, listener, listings, showOnly, treasure, updateListings;
   getTab = function() {
-    var ref1, tab;
+    var ref, tab;
     if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
       tab = tab[1];
     } else {
       tab = 'food';
     }
-    if ((ref1 = !tab) === 'food' || ref1 === 'mats' || ref1 === 'app' || ref1 === 'dragons' || ref1 === 'fam' || ref1 === 'battle' || ref1 === 'skins' || ref1 === 'other') {
+    if ((ref = !tab) === 'food' || ref === 'mats' || ref === 'app' || ref === 'dragons' || ref === 'fam' || ref === 'battle' || ref === 'skins' || ref === 'other') {
       throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
     }
     return tab;
@@ -208,17 +271,17 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     })();
     listings = void 0;
     updateListings = window.updateListings = function() {
-      var i, isUpdated, k, len1, new_listings, results;
+      var i, isUpdated, j, len, new_listings, results;
       new_listings = $('#ah_left div[id*=sale]');
       isUpdated = (function() {
-        var i, k, ref1;
+        var i, j, ref;
         if (listings == null) {
           return true;
         }
         if (new_listings.length === 0 || listings.length === 0) {
           return false;
         }
-        for (i = k = 0, ref1 = listings.length; 0 <= ref1 ? k < ref1 : k > ref1; i = 0 <= ref1 ? ++k : --k) {
+        for (i = j = 0, ref = listings.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
           if (listings[i].element[0] !== new_listings[i]) {
             return true;
           }
@@ -227,18 +290,18 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
       })();
       if (isUpdated) {
         listings = (function() {
-          var k, len1, ref1, results;
-          ref1 = $('#ah_left div[id*=sale]');
+          var j, len, ref, results;
+          ref = $('#ah_left div[id*=sale]');
           results = [];
-          for (k = 0, len1 = ref1.length; k < len1; k++) {
-            i = ref1[k];
+          for (j = 0, len = ref.length; j < len; j++) {
+            i = ref[j];
             results.push(new AuctionListing($(i)));
           }
           return results;
         })();
         results = [];
-        for (k = 0, len1 = listings.length; k < len1; k++) {
-          i = listings[k];
+        for (j = 0, len = listings.length; j < len; j++) {
+          i = listings[j];
           results.push(i.modifyElement());
         }
         return results;
@@ -246,11 +309,11 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     };
     form = new FormData(findMatches('form#searching', 1, 1));
     browseAllBackup = window.browseAll = function() {
-      var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, ref2, th, thl, tl, tll;
+      var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, name, postData, ref, ref1, th, thl, tl, tll;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       console.log('browseAll called with', args);
       postData = {};
-      postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
+      postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
       if (postData.page == null) {
         postData.page = 1;
 
@@ -295,11 +358,11 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
       th = form.field('th');
       gl = form.field('gl');
       gh = form.field('gh');
-      ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
+      ref = [tl.length, th.length, gl.length, gh.length], tll = ref[0], thl = ref[1], gll = ref[2], ghl = ref[3];
       filledFields = 0;
-      ref2 = [tll, thl, gll, ghl];
-      for (l = 0, len1 = ref2.length; l < len1; l++) {
-        i = ref2[l];
+      ref1 = [tll, thl, gll, ghl];
+      for (k = 0, len = ref1.length; k < len; k++) {
+        i = ref1[k];
         if (i) {
           filledFields += 1;
         }
@@ -352,11 +415,11 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
       high: findMatches('input[name=gh]', 1, 1)
     };
     showOnly = function(currency) {
-      var ref1, ref2, them, us;
+      var ref, ref1, them, us;
       if (currency === TREASURE) {
-        ref1 = [treasure, gems], us = ref1[0], them = ref1[1];
+        ref = [treasure, gems], us = ref[0], them = ref[1];
       } else if (currency === GEMS) {
-        ref2 = [gems, treasure], us = ref2[0], them = ref2[1];
+        ref1 = [gems, treasure], us = ref1[0], them = ref1[1];
       } else {
         throw new Error("showOnly called with invalid currency: " + currency);
       }
@@ -388,6 +451,10 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     treasure.img.click(listener);
     gems.img.click(listener);
     treasure.img.css('cursor', 'pointer');
-    gems.img.css('cursor', 'pointer');
+    return gems.img.css('cursor', 'pointer');
   }
-}
+};
+
+scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouse);
+
+scriptHandler.think();

@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.16.0
+// @version      1.17.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -86,9 +86,29 @@ CLICK_TIMEOUT_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
-# Functions {{{1
+# Functions and classes {{{1
 exit = ->
     throw new Error 'Not an error just exiting early'
+
+class UsersubscriptHandler
+    ###
+    # Handles 'usersubscripts', like a userscript but embedded in this bigger
+    # userscript. Another way to think about it is, this object runs certain
+    # functions if certain associated regexes match.
+    ###
+    constructor: () ->
+        @scripts = []
+
+    register: (regex, func) ->
+        if typeof regex == 'string'
+            regex = new RegExp(regex)
+
+        @scripts.push({regex:regex, func:func})
+
+    think: () ->
+        for script in @scripts
+            if script.regex.test window.location.href
+                script.func()
 
 # General improvements {{{1
 # pm = messages link
@@ -130,8 +150,11 @@ else
     currentTreasure   = numberWithCommas safeParseInt treasureIndicator.text()
     treasureIndicator.text(currentTreasure)
 
-# Baldwin's Bubbling Brew {{{1
-if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(window.location.href)
+# Usersubscripts {{{1
+scriptHandler = new UsersubscriptHandler()
+
+# Baldwin's Bubbling Brew {{{2
+baldwinsBubblingBrew = ->
     # If there are any collect buttons.
     if findMatches("input[value='Collect!']", 0, 1).length
         blinker = setInterval((->
@@ -143,7 +166,7 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
 
         window.onfocus = ->
             clearInterval blinker
-            document.title = 'Done.'
+            document.title = 'Ready!'
 
     if (new RegExp('/baldwin/create')).test(window.location.href)
         bubble   = findMatches('.baldwin-create-speech-bubble', 1, 1)
@@ -152,15 +175,26 @@ if (new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')).test(wi
         bubble.css('padding', '5px').css('right', 'inherit')
         instruct.css('background', 'inherit')
         bubble.html BBB_GUIDE
-# Marketplace {{{1
-if (new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(window.location.href)
+
+scriptHandler.register(
+    new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'),
+    baldwinsBubblingBrew
+)
+
+# Marketplace {{{2
+marketplace = ->
     for price in findMatches('#market > div > div:nth-child(3) > div:nth-child(4)', 1)
         price = $(price)
         price.text(
             numberWithCommas safeParseInt price.text()
         )
-# HiLo Game {{{1
-else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(window.location.href)
+
+scriptHandler.register(
+    new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'),
+    marketplace
+)
+# HiLo Game {{{2
+hiloGame = ->
     guesses = parseInt(
         findMatches(
             '#super-container > div:nth-child(2) > div:nth-child(4) > div:nth-child(2)',
@@ -194,8 +228,13 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(win
                     else
                         console.log "Got unrechognized charCode: #{e.charCode}"
             )
-# Lair (for auto-bond) {{{1
-else if (new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')).test(window.location.href)
+
+scriptHandler.register(
+    new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i'),
+    hiloGame,
+)
+# Lair (for auto-bond) {{{2
+lair = ->
     if (bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length
         setTimeout(
             (->
@@ -209,9 +248,15 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')).test(win
             ),
             randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX)
         )
-# Auction House {{{1
-else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(window.location.href)
-    getTab = -> #{{{2
+
+scriptHandler.register(
+    new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'),
+    lair,
+)
+
+# Auction House {{{2
+auctionHouse = ->
+    getTab = -> #{{{3
         if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
             tab = tab[1]
         else
@@ -222,9 +267,9 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
 
         return tab
 
-    #2}}}
+    #3}}}
     if getTab() != 'dragons'
-        # Add a clear button for item name and put it right above the textbox. {{{2
+        # Add a clear button for item name and put it right above the textbox. {{{3
         itemNameText = $('#searching > div:nth-child(1)')
         itemNameText.html(
             itemNameText.html() +
@@ -235,7 +280,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
             '''
         )
 
-        class AuctionListing # {{{2
+        class AuctionListing # {{{3
             constructor: (@element) ->
                 # WARNING: This might break in the future since it overrelies on :nth-child
                 @numberOfItems = safeParseInt(
@@ -282,7 +327,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
                 # TODO Why won't this work?
                 #@nameElement.css('color', '#731d08')
 
-        class FormData # {{{2
+        class FormData # {{{3
             constructor: (@form) ->
 
             field: (name, newValue) ->
@@ -294,7 +339,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
                 else
                     return field.val()
 
-        # Modify AH listings {{{2
+        # Modify AH listings {{{3
         listings = undefined
         updateListings = window.updateListings = ->
             new_listings = $('#ah_left div[id*=sale]')
@@ -319,11 +364,11 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
 
         #safeInterval(updateListings, AH_UPDATE_DELAY)
 
-        # Overwrite browseAll() {{{2
+        # Overwrite browseAll() {{{3
 
         form = new FormData findMatches('form#searching', 1, 1)
 
-        browseAllBackup = window.browseAll = (args...) -> # {{{3
+        browseAllBackup = window.browseAll = (args...) -> # {{{4
             console.log 'browseAll called with', args
             # tl = treasure low  gh = gems high
             # Arguments are:
@@ -424,6 +469,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
             )
 
         # 3}}}
+        # Modify submit button {{{3
         button = findMatches('input#go', 1, 1)
         button.attr('type', 'button')
         button.click(->
@@ -434,7 +480,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
             browseAllBackup()
         ), 400)
 
-        # Filter by only gems or only treasure {{{2
+        # Filter by only gems or only treasure {{{3
         treasure =
             img:   findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1)
             low:   findMatches('input[name=tl]', 1, 1)
@@ -445,7 +491,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
             low:   findMatches('input[name=gl]', 1, 1)
             high:  findMatches('input[name=gh]', 1, 1)
 
-        showOnly = (currency) -> # {{{3
+        showOnly = (currency) -> # {{{4
             if currency == TREASURE
                 [us, them] = [treasure, gems]
             else if currency == GEMS
@@ -464,7 +510,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
                 them.low.val('')
                 them.high.val('')
 
-        listener = (event) -> # {{{3
+        listener = (event) -> # {{{4
             if event.currentTarget == treasure.img[0]
                 showOnly(TREASURE)
             else if event.currentTarget == gems.img[0]
@@ -472,7 +518,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
             else
                 throw new Error 'Something in the auction house code has gone horribly wrong.'
 
-        # 3}}}
+        # 4}}}
         if AH_DEFAULT_CURRENCY?
             showOnly AH_DEFAULT_CURRENCY
             findMatches('input[type=submit]', 1, 1).click()
@@ -484,3 +530,11 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
         # hover over them.
         treasure.img.css 'cursor', 'pointer'
         gems.img.css     'cursor', 'pointer'
+
+# 3}}}
+scriptHandler.register(
+    new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
+    auctionHouse,
+)
+# 2}}}
+scriptHandler.think()
