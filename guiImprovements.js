@@ -17,6 +17,7 @@ General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
 - Adds commas to various numbers around the site.
+- Automatically bonds with familiars.
 
 Auction House:
 - Clicking the icons next to price ranges will let you sort by only treasure or only gems.
@@ -245,19 +246,23 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     };
     form = new FormData(findMatches('form#searching', 1, 1));
     browseAllBackup = window.browseAll = function() {
-      var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, m, name, postData, ref1, ref2, th, thl, tl, tll;
+      var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, ref2, th, thl, tl, tll;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       console.log('browseAll called with', args);
       postData = {};
       postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
       if (postData.page == null) {
-        m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1);
-        if (m.length) {
-          postData.page = m.text();
-        } else {
-          console.log('No page element found, assuming only 1 page.');
-          postData.page = '1';
-        }
+        postData.page = 1;
+
+        /*
+        m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1)
+        
+        if m.length
+            postData.page = m.text()
+        else
+            console.log 'No page element found, assuming only 1 page.'
+            postData.page = '1'
+         */
       }
       if (postData.tab == null) {
         postData.tab = getTab();

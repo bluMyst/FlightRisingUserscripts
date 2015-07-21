@@ -343,6 +343,11 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
             ] = args
 
             if not postData.page?
+                # If you search for something with < your current number of
+                # pages, you end up with a blank page even though there are
+                # results to be seen.
+                postData.page = 1
+                ###
                 m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1)
 
                 if m.length
@@ -350,6 +355,7 @@ else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(windo
                 else
                     console.log 'No page element found, assuming only 1 page.'
                     postData.page = '1'
+                ###
 
             if not postData.tab?
                 postData.tab = getTab()
