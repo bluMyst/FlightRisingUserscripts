@@ -90,7 +90,7 @@ BBB_BLINK_TIMEOUT = 250
 exit = ->
     throw new Error 'Not an error just exiting early'
 
-class UsersubscriptHandler
+class UsersubscriptHandler # {{{2
     ###
     # Handles 'usersubscripts', like a userscript but embedded in this bigger
     # userscript. Another way to think about it is, this object runs certain
@@ -109,6 +109,18 @@ class UsersubscriptHandler
         for script in @scripts
             if script.regex.test window.location.href
                 script.func()
+
+class FormData # {{{2
+    constructor: (@form) ->
+
+    field: (name, newValue) ->
+        # pass no newValue to get current value.
+        field = @form.find "[name=#{name}]"
+
+        if newValue
+            return field.val(newValue)
+        else
+            return field.val()
 
 # General improvements {{{1
 # pm = messages link
@@ -256,6 +268,55 @@ scriptHandler.register(
 
 # Auction House {{{2
 auctionHouse = ->
+    class AuctionListing # {{{3
+        constructor: (@element) ->
+            # WARNING: This might break in the future since it overrelies on :nth-child
+            @numberOfItems = safeParseInt(
+                @element.find('div:nth-child(1) > span:nth-child(1) > span').text()
+            )
+
+            @button = @element.find('[id*=buy_button]')
+
+            @price = safeParseInt @button.text()
+            @priceEA = @price / @numberOfItems
+
+            @nameElement = @element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)')
+            @name        = @nameElement.text()
+
+        modifyElement: ->
+            # Modifies @element to include some extra information.
+            # This is the straightforwad method but jQuery removes everything but the
+            # text if we do it like this:
+            # @button.text(foo)
+
+            target = @button[0].childNodes[2]
+
+            # If our target is gone that probably means the offer expired.
+            if not target?
+                console.warn("Tried to modifyElement() for #{@name} @ #{@price} but the auction expired(?).")
+                return
+
+            if not safeParseInt(target.textContent) == @price
+                throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
+
+            priceString   = numberWithCommas(@price)
+            priceEAString = numberWithCommas(Math.round @priceEA)
+
+            if @numberOfItems > 1
+                target.textContent = " #{priceString} (#{priceEAString} ea)"
+            else
+                target.textContent = " #{priceString}"
+
+            # Give the new text some breathing room.
+            @button.css('width', AH_BUTTON_SPACING)
+
+            @nameElement.html(
+                "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
+            )
+
+            # TODO Why won't this work?
+            #@nameElement.css('color', '#731d08')
+
     getTab = -> #{{{3
         if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
             tab = tab[1]
@@ -280,92 +341,11 @@ auctionHouse = ->
             '''
         )
 
-        class AuctionListing # {{{3
-            constructor: (@element) ->
-                # WARNING: This might break in the future since it overrelies on :nth-child
-                @numberOfItems = safeParseInt(
-                    @element.find('div:nth-child(1) > span:nth-child(1) > span').text()
-                )
-
-                @button = @element.find('[id*=buy_button]')
-
-                @price = safeParseInt @button.text()
-                @priceEA = @price / @numberOfItems
-
-                @nameElement = @element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)')
-                @name        = @nameElement.text()
-
-            modifyElement: ->
-                # Modifies @element to include some extra information.
-                # This is the straightforwad method but jQuery removes everything but the
-                # text if we do it like this:
-                # @button.text(foo)
-
-                target = @button[0].childNodes[2]
-
-                # If our target is gone that probably means the offer expired.
-                if not target? then return
-
-                if not safeParseInt(target.textContent) == @price
-                    throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
-
-                priceString   = numberWithCommas(@price)
-                priceEAString = numberWithCommas(Math.round @priceEA)
-
-                if @numberOfItems > 1
-                    target.textContent = " #{priceString} (#{priceEAString} ea)"
-                else
-                    target.textContent = " #{priceString}"
-
-                # Give the new text some breathing room.
-                @button.css('width', AH_BUTTON_SPACING)
-
-                @nameElement.html(
-                    "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
-                )
-
-                # TODO Why won't this work?
-                #@nameElement.css('color', '#731d08')
-
-        class FormData # {{{3
-            constructor: (@form) ->
-
-            field: (name, newValue) ->
-                # pass no newValue to get current value.
-                field = @form.find "[name=#{name}]"
-
-                if newValue
-                    return field.val(newValue)
-                else
-                    return field.val()
-
         # Modify AH listings {{{3
-        listings = undefined
-        updateListings = window.updateListings = ->
-            new_listings = $('#ah_left div[id*=sale]')
-
-            isUpdated = (->
-                if not listings? then return true
-
-                if new_listings.length == 0 or listings.length == 0
-                    return false
-
-                for i in [0...listings.length]
-                    # need to get element[0] to un-jQuery it.
-                    if listings[i].element[0] != new_listings[i]
-                        return true
-
-                return false
-            )()
-
-            if isUpdated
-                listings = (new AuctionListing $(i) for i in $('#ah_left div[id*=sale]'))
-                i.modifyElement() for i in listings
-
-        #safeInterval(updateListings, AH_UPDATE_DELAY)
+        listings = (new AuctionListing( $(i) ) for i in $('#ah_left div[id*=sale]'))
+        i.modifyElement() for i in listings
 
         # Overwrite browseAll() {{{3
-
         form = new FormData findMatches('form#searching', 1, 1)
 
         browseAllBackup = window.browseAll = (args...) -> # {{{4
@@ -376,7 +356,7 @@ auctionHouse = ->
             # lohi = [treasure lohi] or [gem lohi] or [nothing]
             # X lohi = X hi or X lo or (X lo, X hi)
 
-            # Build postData {{{4
+            # Build postData {{{5
             postData = {}
 
             [
@@ -446,7 +426,7 @@ auctionHouse = ->
                 if gll then postData.gl = gl
                 if ghl then postData.gh = gh
 
-            # 4}}}
+            # 5}}}
             console.log 'Posting', postData
             $.ajax({
                 type: "POST",

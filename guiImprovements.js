@@ -33,7 +33,7 @@ Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, newHTML, scriptHandler, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, newHTML, scriptHandler, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -97,6 +97,25 @@ UsersubscriptHandler = (function() {
   };
 
   return UsersubscriptHandler;
+
+})();
+
+FormData = (function() {
+  function FormData(form1) {
+    this.form = form1;
+  }
+
+  FormData.prototype.field = function(name, newValue) {
+    var field;
+    field = this.form.find("[name=" + name + "]");
+    if (newValue) {
+      return field.val(newValue);
+    } else {
+      return field.val();
+    }
+  };
+
+  return FormData;
 
 })();
 
@@ -201,7 +220,42 @@ lair = function() {
 scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'), lair);
 
 auctionHouse = function() {
-  var AuctionListing, FormData, browseAllBackup, button, form, gems, getTab, itemNameText, listener, listings, showOnly, treasure, updateListings;
+  var AuctionListing, browseAllBackup, button, form, gems, getTab, i, itemNameText, j, len, listener, listings, showOnly, treasure;
+  AuctionListing = (function() {
+    function AuctionListing(element) {
+      this.element = element;
+      this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
+      this.button = this.element.find('[id*=buy_button]');
+      this.price = safeParseInt(this.button.text());
+      this.priceEA = this.price / this.numberOfItems;
+      this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
+      this.name = this.nameElement.text();
+    }
+
+    AuctionListing.prototype.modifyElement = function() {
+      var priceEAString, priceString, target;
+      target = this.button[0].childNodes[2];
+      if (target == null) {
+        console.warn("Tried to modifyElement() for " + this.name + " @ " + this.price + " but the auction expired(?).");
+        return;
+      }
+      if (!safeParseInt(target.textContent) === this.price) {
+        throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
+      }
+      priceString = numberWithCommas(this.price);
+      priceEAString = numberWithCommas(Math.round(this.priceEA));
+      if (this.numberOfItems > 1) {
+        target.textContent = " " + priceString + " (" + priceEAString + " ea)";
+      } else {
+        target.textContent = " " + priceString;
+      }
+      this.button.css('width', AH_BUTTON_SPACING);
+      return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
+    };
+
+    return AuctionListing;
+
+  })();
   getTab = function() {
     var ref, tab;
     if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
@@ -217,103 +271,27 @@ auctionHouse = function() {
   if (getTab() !== 'dragons') {
     itemNameText = $('#searching > div:nth-child(1)');
     itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
-    AuctionListing = (function() {
-      function AuctionListing(element) {
-        this.element = element;
-        this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
-        this.button = this.element.find('[id*=buy_button]');
-        this.price = safeParseInt(this.button.text());
-        this.priceEA = this.price / this.numberOfItems;
-        this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
-        this.name = this.nameElement.text();
+    listings = (function() {
+      var j, len, ref, results;
+      ref = $('#ah_left div[id*=sale]');
+      results = [];
+      for (j = 0, len = ref.length; j < len; j++) {
+        i = ref[j];
+        results.push(new AuctionListing($(i)));
       }
-
-      AuctionListing.prototype.modifyElement = function() {
-        var priceEAString, priceString, target;
-        target = this.button[0].childNodes[2];
-        if (target == null) {
-          return;
-        }
-        if (!safeParseInt(target.textContent) === this.price) {
-          throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
-        }
-        priceString = numberWithCommas(this.price);
-        priceEAString = numberWithCommas(Math.round(this.priceEA));
-        if (this.numberOfItems > 1) {
-          target.textContent = " " + priceString + " (" + priceEAString + " ea)";
-        } else {
-          target.textContent = " " + priceString;
-        }
-        this.button.css('width', AH_BUTTON_SPACING);
-        return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
-      };
-
-      return AuctionListing;
-
+      return results;
     })();
-    FormData = (function() {
-      function FormData(form1) {
-        this.form = form1;
-      }
-
-      FormData.prototype.field = function(name, newValue) {
-        var field;
-        field = this.form.find("[name=" + name + "]");
-        if (newValue) {
-          return field.val(newValue);
-        } else {
-          return field.val();
-        }
-      };
-
-      return FormData;
-
-    })();
-    listings = void 0;
-    updateListings = window.updateListings = function() {
-      var i, isUpdated, j, len, new_listings, results;
-      new_listings = $('#ah_left div[id*=sale]');
-      isUpdated = (function() {
-        var i, j, ref;
-        if (listings == null) {
-          return true;
-        }
-        if (new_listings.length === 0 || listings.length === 0) {
-          return false;
-        }
-        for (i = j = 0, ref = listings.length; 0 <= ref ? j < ref : j > ref; i = 0 <= ref ? ++j : --j) {
-          if (listings[i].element[0] !== new_listings[i]) {
-            return true;
-          }
-        }
-        return false;
-      })();
-      if (isUpdated) {
-        listings = (function() {
-          var j, len, ref, results;
-          ref = $('#ah_left div[id*=sale]');
-          results = [];
-          for (j = 0, len = ref.length; j < len; j++) {
-            i = ref[j];
-            results.push(new AuctionListing($(i)));
-          }
-          return results;
-        })();
-        results = [];
-        for (j = 0, len = listings.length; j < len; j++) {
-          i = listings[j];
-          results.push(i.modifyElement());
-        }
-        return results;
-      }
-    };
+    for (j = 0, len = listings.length; j < len; j++) {
+      i = listings[j];
+      i.modifyElement();
+    }
     form = new FormData(findMatches('form#searching', 1, 1));
     browseAllBackup = window.browseAll = function() {
-      var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, name, postData, ref, ref1, th, thl, tl, tll;
+      var args, cat, filledFields, gh, ghl, gl, gll, k, l, len1, name, postData, ref, ref1, th, thl, tl, tll;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       console.log('browseAll called with', args);
       postData = {};
-      postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
+      postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
       if (postData.page == null) {
         postData.page = 1;
 
@@ -361,8 +339,8 @@ auctionHouse = function() {
       ref = [tl.length, th.length, gl.length, gh.length], tll = ref[0], thl = ref[1], gll = ref[2], ghl = ref[3];
       filledFields = 0;
       ref1 = [tll, thl, gll, ghl];
-      for (k = 0, len = ref1.length; k < len; k++) {
-        i = ref1[k];
+      for (l = 0, len1 = ref1.length; l < len1; l++) {
+        i = ref1[l];
         if (i) {
           filledFields += 1;
         }
