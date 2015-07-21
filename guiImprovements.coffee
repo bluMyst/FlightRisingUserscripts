@@ -79,9 +79,9 @@ AH_UPDATE_DELAY     = 2000
 # Can be TREASURE or GEMS
 AH_DEFAULT_CURRENCY = undefined
 
-# Min and max times to wait before clicking play again.
-HILO_CLICK_MIN =  300
-HILO_CLICK_MAX = 1000
+# Min and max times to wait before clicking a button.
+CLICK_TIMEOUT_MIN =  300
+CLICK_TIMEOUT_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
@@ -172,7 +172,7 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(win
         if playAgain.length
             setTimeout(
                 (-> playAgain.click()),
-                randInt(HILO_CLICK_MIN, HILO_CLICK_MAX),
+                randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX),
             )
         else
             # Add keyboard shortcut instructions in place of the normal useless ones.

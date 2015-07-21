@@ -32,7 +32,7 @@ Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HILO_CLICK_MAX, HILO_CLICK_MIN, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, buttonHi, buttonLo, currentTreasure, exit, form, gems, getTab, guesses, instruct, itemNameText, j, len, listener, listings, newHTML, playAgain, price, ref, showOnly, treasure, treasureIndicator, updateListings,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, buttonHi, buttonLo, currentTreasure, exit, form, gems, getTab, guesses, instruct, itemNameText, j, len, listener, listings, newHTML, playAgain, price, ref, showOnly, treasure, treasureIndicator, updateListings,
   slice = [].slice;
 
 TREASURE = 0;
@@ -49,9 +49,9 @@ AH_UPDATE_DELAY = 2000;
 
 AH_DEFAULT_CURRENCY = void 0;
 
-HILO_CLICK_MIN = 300;
+CLICK_TIMEOUT_MIN = 300;
 
-HILO_CLICK_MAX = 1000;
+CLICK_TIMEOUT_MAX = 1000;
 
 BBB_BLINK_TIMEOUT = 250;
 
@@ -111,7 +111,7 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
     if (playAgain.length) {
       setTimeout((function() {
         return playAgain.click();
-      }), randInt(HILO_CLICK_MIN, HILO_CLICK_MAX));
+      }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
     } else {
       findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.');
       buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1);
