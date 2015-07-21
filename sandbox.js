@@ -7,6 +7,9 @@ CLICK_TIMEOUT_MAX = 1000;
 
 if ((bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length) {
   setTimeout((function() {
-    return bondButton.click();
+    bondButton.click();
+    return setTimeout((function() {
+      return findMatches('button#no', 1, 1).click();
+    }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
   }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
 }

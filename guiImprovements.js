@@ -32,7 +32,7 @@ Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, blinker, browseAllBackup, bubble, button, buttonHi, buttonLo, currentTreasure, exit, form, gems, getTab, guesses, instruct, itemNameText, j, len, listener, listings, newHTML, playAgain, price, ref, showOnly, treasure, treasureIndicator, updateListings,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, blinker, bondButton, browseAllBackup, bubble, button, buttonHi, buttonLo, currentTreasure, exit, form, gems, getTab, guesses, instruct, itemNameText, j, len, listener, listings, newHTML, playAgain, price, ref, showOnly, treasure, treasureIndicator, updateListings,
   slice = [].slice;
 
 TREASURE = 0;
@@ -127,6 +127,15 @@ if ((new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')).test(windo
         }
       });
     }
+  }
+} else if ((new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')).test(window.location.href)) {
+  if ((bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length) {
+    setTimeout((function() {
+      bondButton.click();
+      return setTimeout((function() {
+        return findMatches('button#no', 1, 1).click();
+      }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+    }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
   }
 } else if ((new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(window.location.href)) {
   getTab = function() {

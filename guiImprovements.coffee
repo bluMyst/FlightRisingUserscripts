@@ -16,6 +16,7 @@ General:
 - Adds two new links to Baldwin's Bubbling Brew.
 - Removes redundant links to messages and gems.
 - Adds commas to various numbers around the site.
+- Automatically bonds with familiars.
 
 Auction House:
 - Clicking the icons next to price ranges will let you sort by only treasure or only gems.
@@ -193,6 +194,21 @@ else if (new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')).test(win
                     else
                         console.log "Got unrechognized charCode: #{e.charCode}"
             )
+# Lair (for auto-bond) {{{1
+else if (new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')).test(window.location.href)
+    if (bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length
+        setTimeout(
+            (->
+                bondButton.click()
+                setTimeout(
+                    (->
+                        findMatches('button#no', 1, 1).click()
+                    ),
+                    randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX)
+                )
+            ),
+            randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX)
+        )
 # Auction House {{{1
 else if (new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')).test(window.location.href)
     getTab = -> #{{{2
