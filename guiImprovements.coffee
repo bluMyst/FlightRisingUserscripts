@@ -205,6 +205,7 @@ scriptHandler.register(
     new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'),
     marketplace
 )
+
 # HiLo Game {{{2
 hiloGame = ->
     guesses = parseInt(
@@ -299,8 +300,8 @@ auctionHouse = ->
             if not safeParseInt(target.textContent) == @price
                 throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
 
-            priceString   = numberWithCommas(@price)
-            priceEAString = numberWithCommas(Math.round @priceEA)
+            priceString   = numberWithCommas @price
+            priceEAString = numberWithCommas Math.round @priceEA
 
             if @numberOfItems > 1
                 target.textContent = " #{priceString} (#{priceEAString} ea)"
@@ -321,7 +322,7 @@ auctionHouse = ->
         if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
             tab = tab[1]
         else
-            tab =  'food'
+            tab = 'food'
 
         if not tab in ['food', 'mats', 'app', 'dragons', 'fam', 'battle', 'skins', 'other']
             throw new Error "Detected tab as invalid option #{postData.tab.toString()}."
@@ -342,8 +343,11 @@ auctionHouse = ->
         )
 
         # Modify AH listings {{{3
-        listings = (new AuctionListing( $(i) ) for i in $('#ah_left div[id*=sale]'))
-        i.modifyElement() for i in listings
+        updateListings = ->
+            listings = (new AuctionListing( $(i) ) for i in $('#ah_left div[id*=sale]'))
+            i.modifyElement() for i in listings
+
+        updateListings()
 
         # Overwrite browseAll() {{{3
         form = new FormData findMatches('form#searching', 1, 1)
@@ -461,60 +465,80 @@ auctionHouse = ->
         ), 400)
 
         # Filter by only gems or only treasure {{{3
-        treasure =
-            img:   findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1)
-            low:   findMatches('input[name=tl]', 1, 1)
-            high:  findMatches('input[name=th]', 1, 1)
+        class CurrencyFields
+            constructor: (@img, @low, @high) ->
 
-        gems =
-            img:   findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1)
-            low:   findMatches('input[name=gl]', 1, 1)
-            high:  findMatches('input[name=gh]', 1, 1)
+            notEmpty: () ->
+                val = @low.val().length or @high.val().length
+                return val
 
-        showOnly = (currency) -> # {{{4
-            if currency == TREASURE
-                [us, them] = [treasure, gems]
-            else if currency == GEMS
-                [us, them] = [gems, treasure]
-            else
-                throw new Error "showOnly called with invalid currency: #{currency}"
+        class CurrencyFilterer
+            LOW:  '0'
+            HIGH: '999999999999999999'
 
-            if us.low.val() != '' or us.high.val() != ''
-                us.low.val('')
-                us.high.val('')
-            else
-                us.low.val('0')
-                us.high.val('99999999999999999999')
+            constructor: (@treasureFields, @gemFields) ->
+                @treasureListener = @makeListener(@treasureFields, @gemFields)
+                @gemListener      = @makeListener(@gemFields, @treasureFields)
 
-            if them.low.val() != '' or them.high.val() != ''
-                them.low.val('')
-                them.high.val('')
+            makeListener: (us, them) -> (event) =>
+                if us.notEmpty()
+                    us.low.val  ''
+                    us.high.val ''
+                else
+                    us.low.val  @LOW
+                    us.high.val @HIGH
 
-        listener = (event) -> # {{{4
-            if event.currentTarget == treasure.img[0]
-                showOnly(TREASURE)
-            else if event.currentTarget == gems.img[0]
-                showOnly(GEMS)
-            else
-                throw new Error 'Something in the auction house code has gone horribly wrong.'
+                # TODO: Is it faster to do this always or to check if .notEmpty() first?
+                them.low.val  ''
+                them.high.val ''
 
-        # 4}}}
-        if AH_DEFAULT_CURRENCY?
-            showOnly AH_DEFAULT_CURRENCY
-            findMatches('input[type=submit]', 1, 1).click()
+            init: ->
+                @treasureFields.img.click @treasureListener
+                @gemFields.img.click      @gemListener
 
-        treasure.img.click listener
-        gems.img.click     listener
+                # Make the currency buttons look clickable by changing the cursor when you
+                # hover over them.
+                @treasureFields.img.css 'cursor', 'pointer'
+                @gemFields.img.css      'cursor', 'pointer'
 
-        # Make the currency buttons look clickable by changing the cursor when you
-        # hover over them.
-        treasure.img.css 'cursor', 'pointer'
-        gems.img.css     'cursor', 'pointer'
+                if AH_DEFAULT_CURRENCY?
+                    filterer.showOnly AH_DEFAULT_CURRENCY
+
+            showOnly: (currency) ->
+                switch currency
+                    when TREASURE
+                        @treasureListener()
+                    when GEMS
+                        @gemListener()
+                    else
+                        throw new Error "CurrencyFilterer.showOnly called with invalid currency: #{currency}"
+
+                findMatches('input[type=button][value=Search]', 1, 1).click()
+
+        filterer = new CurrencyFilterer(
+            # Treasure
+            new CurrencyFields(
+                findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
+                findMatches('input[name=tl]', 1, 1),
+                findMatches('input[name=th]', 1, 1),
+            ),
+
+            # Gems
+            new CurrencyFields(
+                findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1),
+                findMatches('input[name=gl]', 1, 1),
+                findMatches('input[name=gh]', 1, 1),
+            ),
+        )
+
+        filterer.init()
+        console.log filterer
 
 # 3}}}
 scriptHandler.register(
     new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
     auctionHouse,
 )
+
 # 2}}}
 scriptHandler.think()

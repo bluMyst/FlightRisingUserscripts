@@ -220,7 +220,7 @@ lair = function() {
 scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'), lair);
 
 auctionHouse = function() {
-  var AuctionListing, browseAllBackup, button, form, gems, getTab, i, itemNameText, j, len, listener, listings, showOnly, treasure;
+  var AuctionListing, CurrencyFields, CurrencyFilterer, browseAllBackup, button, filterer, form, getTab, itemNameText, updateListings;
   AuctionListing = (function() {
     function AuctionListing(element) {
       this.element = element;
@@ -271,27 +271,33 @@ auctionHouse = function() {
   if (getTab() !== 'dragons') {
     itemNameText = $('#searching > div:nth-child(1)');
     itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
-    listings = (function() {
-      var j, len, ref, results;
-      ref = $('#ah_left div[id*=sale]');
+    updateListings = function() {
+      var i, j, len, listings, results;
+      listings = (function() {
+        var j, len, ref, results;
+        ref = $('#ah_left div[id*=sale]');
+        results = [];
+        for (j = 0, len = ref.length; j < len; j++) {
+          i = ref[j];
+          results.push(new AuctionListing($(i)));
+        }
+        return results;
+      })();
       results = [];
-      for (j = 0, len = ref.length; j < len; j++) {
-        i = ref[j];
-        results.push(new AuctionListing($(i)));
+      for (j = 0, len = listings.length; j < len; j++) {
+        i = listings[j];
+        results.push(i.modifyElement());
       }
       return results;
-    })();
-    for (j = 0, len = listings.length; j < len; j++) {
-      i = listings[j];
-      i.modifyElement();
-    }
+    };
+    updateListings();
     form = new FormData(findMatches('form#searching', 1, 1));
     browseAllBackup = window.browseAll = function() {
-      var args, cat, filledFields, gh, ghl, gl, gll, k, l, len1, name, postData, ref, ref1, th, thl, tl, tll;
+      var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, name, postData, ref, ref1, th, thl, tl, tll;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       console.log('browseAll called with', args);
       postData = {};
-      postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
+      postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
       if (postData.page == null) {
         postData.page = 1;
 
@@ -339,8 +345,8 @@ auctionHouse = function() {
       ref = [tl.length, th.length, gl.length, gh.length], tll = ref[0], thl = ref[1], gll = ref[2], ghl = ref[3];
       filledFields = 0;
       ref1 = [tll, thl, gll, ghl];
-      for (l = 0, len1 = ref1.length; l < len1; l++) {
-        i = ref1[l];
+      for (k = 0, len = ref1.length; k < len; k++) {
+        i = ref1[k];
         if (i) {
           filledFields += 1;
         }
@@ -382,54 +388,80 @@ auctionHouse = function() {
     setTimeout((function() {
       return browseAllBackup();
     }), 400);
-    treasure = {
-      img: findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
-      low: findMatches('input[name=tl]', 1, 1),
-      high: findMatches('input[name=th]', 1, 1)
-    };
-    gems = {
-      img: findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1),
-      low: findMatches('input[name=gl]', 1, 1),
-      high: findMatches('input[name=gh]', 1, 1)
-    };
-    showOnly = function(currency) {
-      var ref, ref1, them, us;
-      if (currency === TREASURE) {
-        ref = [treasure, gems], us = ref[0], them = ref[1];
-      } else if (currency === GEMS) {
-        ref1 = [gems, treasure], us = ref1[0], them = ref1[1];
-      } else {
-        throw new Error("showOnly called with invalid currency: " + currency);
+    CurrencyFields = (function() {
+      function CurrencyFields(img, low, high) {
+        this.img = img;
+        this.low = low;
+        this.high = high;
       }
-      if (us.low.val() !== '' || us.high.val() !== '') {
-        us.low.val('');
-        us.high.val('');
-      } else {
-        us.low.val('0');
-        us.high.val('99999999999999999999');
+
+      CurrencyFields.prototype.notEmpty = function() {
+        var val;
+        val = this.low.val().length || this.high.val().length;
+        return val;
+      };
+
+      return CurrencyFields;
+
+    })();
+    CurrencyFilterer = (function() {
+      CurrencyFilterer.prototype.LOW = '0';
+
+      CurrencyFilterer.prototype.HIGH = '999999999999999999';
+
+      function CurrencyFilterer(treasureFields, gemFields) {
+        this.treasureFields = treasureFields;
+        this.gemFields = gemFields;
+        this.treasureListener = this.makeListener(this.treasureFields, this.gemFields);
+        this.gemListener = this.makeListener(this.gemFields, this.treasureFields);
       }
-      if (them.low.val() !== '' || them.high.val() !== '') {
-        them.low.val('');
-        return them.high.val('');
-      }
-    };
-    listener = function(event) {
-      if (event.currentTarget === treasure.img[0]) {
-        return showOnly(TREASURE);
-      } else if (event.currentTarget === gems.img[0]) {
-        return showOnly(GEMS);
-      } else {
-        throw new Error('Something in the auction house code has gone horribly wrong.');
-      }
-    };
-    if (AH_DEFAULT_CURRENCY != null) {
-      showOnly(AH_DEFAULT_CURRENCY);
-      findMatches('input[type=submit]', 1, 1).click();
-    }
-    treasure.img.click(listener);
-    gems.img.click(listener);
-    treasure.img.css('cursor', 'pointer');
-    return gems.img.css('cursor', 'pointer');
+
+      CurrencyFilterer.prototype.makeListener = function(us, them) {
+        return (function(_this) {
+          return function(event) {
+            if (us.notEmpty()) {
+              us.low.val('');
+              us.high.val('');
+            } else {
+              us.low.val(_this.LOW);
+              us.high.val(_this.HIGH);
+            }
+            them.low.val('');
+            return them.high.val('');
+          };
+        })(this);
+      };
+
+      CurrencyFilterer.prototype.init = function() {
+        this.treasureFields.img.click(this.treasureListener);
+        this.gemFields.img.click(this.gemListener);
+        this.treasureFields.img.css('cursor', 'pointer');
+        this.gemFields.img.css('cursor', 'pointer');
+        if (AH_DEFAULT_CURRENCY != null) {
+          return filterer.showOnly(AH_DEFAULT_CURRENCY);
+        }
+      };
+
+      CurrencyFilterer.prototype.showOnly = function(currency) {
+        switch (currency) {
+          case TREASURE:
+            this.treasureListener();
+            break;
+          case GEMS:
+            this.gemListener();
+            break;
+          default:
+            throw new Error("CurrencyFilterer.showOnly called with invalid currency: " + currency);
+        }
+        return findMatches('input[type=button][value=Search]', 1, 1).click();
+      };
+
+      return CurrencyFilterer;
+
+    })();
+    filterer = new CurrencyFilterer(new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1), findMatches('input[name=tl]', 1, 1), findMatches('input[name=th]', 1, 1)), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1), findMatches('input[name=gl]', 1, 1), findMatches('input[name=gh]', 1, 1)));
+    filterer.init();
+    return console.log(filterer);
   }
 };
 
