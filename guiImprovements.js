@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.17.0
+// @version      1.18.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -268,6 +268,80 @@ auctionHouse = function() {
     }
     return tab;
   };
+  CurrencyFields = (function() {
+    function CurrencyFields(img, low, high) {
+      this.img = img;
+      this.low = low;
+      this.high = high;
+    }
+
+    CurrencyFields.prototype.notEmpty = function() {
+      var val;
+      val = this.low.val().length || this.high.val().length;
+      return val;
+    };
+
+    return CurrencyFields;
+
+  })();
+  CurrencyFilterer = (function() {
+    CurrencyFilterer.prototype.LOW = '0';
+
+    CurrencyFilterer.prototype.HIGH = '999999999999999999';
+
+    function CurrencyFilterer(searchButton, treasureFields, gemFields) {
+      this.searchButton = searchButton;
+      this.treasureFields = treasureFields;
+      this.gemFields = gemFields;
+      this.treasureListener = this.makeListener(this.treasureFields, this.gemFields);
+      this.gemListener = this.makeListener(this.gemFields, this.treasureFields);
+    }
+
+    CurrencyFilterer.prototype.makeListener = function(us, them) {
+      return (function(_this) {
+        return function(event) {
+          if (us.notEmpty()) {
+            us.low.val('');
+            us.high.val('');
+          } else {
+            us.low.val(_this.LOW);
+            us.high.val(_this.HIGH);
+          }
+          them.low.val('');
+          return them.high.val('');
+        };
+      })(this);
+    };
+
+    CurrencyFilterer.prototype.init = function() {
+      this.treasureFields.img.click(this.treasureListener);
+      this.gemFields.img.click(this.gemListener);
+      this.treasureFields.img.css('cursor', 'pointer');
+      this.gemFields.img.css('cursor', 'pointer');
+      if (AH_DEFAULT_CURRENCY != null) {
+        return filterer.showOnly(AH_DEFAULT_CURRENCY);
+      }
+    };
+
+    CurrencyFilterer.prototype.showOnly = function(currency) {
+      switch (currency) {
+        case TREASURE:
+          this.treasureListener();
+          break;
+        case GEMS:
+          this.gemListener();
+          break;
+        default:
+          throw new Error("CurrencyFilterer.showOnly called with invalid currency: " + currency);
+      }
+      return this.searchButton.click();
+    };
+
+    return CurrencyFilterer;
+
+  })();
+  filterer = new CurrencyFilterer(findMatches('input[value=Search]', 1, 1).click(), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1), findMatches('input[name=tl]', 1, 1), findMatches('input[name=th]', 1, 1)), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1), findMatches('input[name=gl]', 1, 1), findMatches('input[name=gh]', 1, 1)));
+  filterer.init();
   if (getTab() !== 'dragons') {
     itemNameText = $('#searching > div:nth-child(1)');
     itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
@@ -385,83 +459,9 @@ auctionHouse = function() {
     button.click(function() {
       return browseAllBackup();
     });
-    setTimeout((function() {
+    return setTimeout((function() {
       return browseAllBackup();
     }), 400);
-    CurrencyFields = (function() {
-      function CurrencyFields(img, low, high) {
-        this.img = img;
-        this.low = low;
-        this.high = high;
-      }
-
-      CurrencyFields.prototype.notEmpty = function() {
-        var val;
-        val = this.low.val().length || this.high.val().length;
-        return val;
-      };
-
-      return CurrencyFields;
-
-    })();
-    CurrencyFilterer = (function() {
-      CurrencyFilterer.prototype.LOW = '0';
-
-      CurrencyFilterer.prototype.HIGH = '999999999999999999';
-
-      function CurrencyFilterer(treasureFields, gemFields) {
-        this.treasureFields = treasureFields;
-        this.gemFields = gemFields;
-        this.treasureListener = this.makeListener(this.treasureFields, this.gemFields);
-        this.gemListener = this.makeListener(this.gemFields, this.treasureFields);
-      }
-
-      CurrencyFilterer.prototype.makeListener = function(us, them) {
-        return (function(_this) {
-          return function(event) {
-            if (us.notEmpty()) {
-              us.low.val('');
-              us.high.val('');
-            } else {
-              us.low.val(_this.LOW);
-              us.high.val(_this.HIGH);
-            }
-            them.low.val('');
-            return them.high.val('');
-          };
-        })(this);
-      };
-
-      CurrencyFilterer.prototype.init = function() {
-        this.treasureFields.img.click(this.treasureListener);
-        this.gemFields.img.click(this.gemListener);
-        this.treasureFields.img.css('cursor', 'pointer');
-        this.gemFields.img.css('cursor', 'pointer');
-        if (AH_DEFAULT_CURRENCY != null) {
-          return filterer.showOnly(AH_DEFAULT_CURRENCY);
-        }
-      };
-
-      CurrencyFilterer.prototype.showOnly = function(currency) {
-        switch (currency) {
-          case TREASURE:
-            this.treasureListener();
-            break;
-          case GEMS:
-            this.gemListener();
-            break;
-          default:
-            throw new Error("CurrencyFilterer.showOnly called with invalid currency: " + currency);
-        }
-        return findMatches('input[type=button][value=Search]', 1, 1).click();
-      };
-
-      return CurrencyFilterer;
-
-    })();
-    filterer = new CurrencyFilterer(new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1), findMatches('input[name=tl]', 1, 1), findMatches('input[name=th]', 1, 1)), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1), findMatches('input[name=gl]', 1, 1), findMatches('input[name=gh]', 1, 1)));
-    filterer.init();
-    return console.log(filterer);
   }
 };
 

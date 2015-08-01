@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.17.0
+// @version      1.18.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -315,9 +315,6 @@ auctionHouse = ->
                 "<a href='javascript:$(\"input[name=name]\").val(\"#{@name}\")'>#{@name}</a>"
             )
 
-            # TODO Why won't this work?
-            #@nameElement.css('color', '#731d08')
-
     getTab = -> #{{{3
         if (tab = /[?&]tab=([^&]+)/.exec(window.location.href))?
             tab = tab[1]
@@ -329,9 +326,81 @@ auctionHouse = ->
 
         return tab
 
-    #3}}}
-    if getTab() != 'dragons'
-        # Add a clear button for item name and put it right above the textbox. {{{3
+    # Filter by only gems or only treasure {{{3
+    class CurrencyFields # {{{4
+        constructor: (@img, @low, @high) ->
+
+        notEmpty: () ->
+            val = @low.val().length or @high.val().length
+            return val
+
+    class CurrencyFilterer # {{{4
+        LOW:  '0'
+        HIGH: '999999999999999999'
+
+        constructor: (@searchButton, @treasureFields, @gemFields) ->
+            @treasureListener = @makeListener(@treasureFields, @gemFields)
+            @gemListener      = @makeListener(@gemFields, @treasureFields)
+
+        makeListener: (us, them) -> (event) =>
+            if us.notEmpty()
+                us.low.val  ''
+                us.high.val ''
+            else
+                us.low.val  @LOW
+                us.high.val @HIGH
+
+            # TODO: Is it faster to do this always or to check if .notEmpty() first?
+            them.low.val  ''
+            them.high.val ''
+
+        init: ->
+            @treasureFields.img.click @treasureListener
+            @gemFields.img.click      @gemListener
+
+            # Make the currency buttons look clickable by changing the cursor when you
+            # hover over them.
+            @treasureFields.img.css 'cursor', 'pointer'
+            @gemFields.img.css      'cursor', 'pointer'
+
+            if AH_DEFAULT_CURRENCY?
+                filterer.showOnly AH_DEFAULT_CURRENCY
+
+        showOnly: (currency) ->
+            switch currency
+                when TREASURE
+                    @treasureListener()
+                when GEMS
+                    @gemListener()
+                else
+                    throw new Error "CurrencyFilterer.showOnly called with invalid currency: #{currency}"
+
+            @searchButton.click()
+
+    filterer = new CurrencyFilterer( # {{{4
+        # Search button
+        findMatches('input[value=Search]', 1, 1).click()
+
+        # Treasure
+        new CurrencyFields(
+            findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
+            findMatches('input[name=tl]', 1, 1),
+            findMatches('input[name=th]', 1, 1),
+        ),
+
+        # Gems
+        new CurrencyFields(
+            findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1),
+            findMatches('input[name=gl]', 1, 1),
+            findMatches('input[name=gh]', 1, 1),
+        ),
+    )
+
+    filterer.init()
+
+    # }}}3
+    if getTab() != 'dragons' # {{{3
+        # Add a clear button for item name and put it right above the textbox. {{{4
         itemNameText = $('#searching > div:nth-child(1)')
         itemNameText.html(
             itemNameText.html() +
@@ -342,17 +411,17 @@ auctionHouse = ->
             '''
         )
 
-        # Modify AH listings {{{3
+        # Modify AH listings {{{4
         updateListings = ->
             listings = (new AuctionListing( $(i) ) for i in $('#ah_left div[id*=sale]'))
             i.modifyElement() for i in listings
 
         updateListings()
 
-        # Overwrite browseAll() {{{3
+        # Overwrite browseAll() {{{4
         form = new FormData findMatches('form#searching', 1, 1)
 
-        browseAllBackup = window.browseAll = (args...) -> # {{{4
+        browseAllBackup = window.browseAll = (args...) -> # {{{5
             console.log 'browseAll called with', args
             # tl = treasure low  gh = gems high
             # Arguments are:
@@ -360,7 +429,7 @@ auctionHouse = ->
             # lohi = [treasure lohi] or [gem lohi] or [nothing]
             # X lohi = X hi or X lo or (X lo, X hi)
 
-            # Build postData {{{5
+            # Build postData {{{6
             postData = {}
 
             [
@@ -430,7 +499,7 @@ auctionHouse = ->
                 if gll then postData.gl = gl
                 if ghl then postData.gh = gh
 
-            # 5}}}
+            # }}}6
             console.log 'Posting', postData
             $.ajax({
                 type: "POST",
@@ -452,8 +521,7 @@ auctionHouse = ->
                 ), 20)
             )
 
-        # 3}}}
-        # Modify submit button {{{3
+        # Modify submit button {{{5
         button = findMatches('input#go', 1, 1)
         button.attr('type', 'button')
         button.click(->
@@ -464,81 +532,12 @@ auctionHouse = ->
             browseAllBackup()
         ), 400)
 
-        # Filter by only gems or only treasure {{{3
-        class CurrencyFields
-            constructor: (@img, @low, @high) ->
-
-            notEmpty: () ->
-                val = @low.val().length or @high.val().length
-                return val
-
-        class CurrencyFilterer
-            LOW:  '0'
-            HIGH: '999999999999999999'
-
-            constructor: (@treasureFields, @gemFields) ->
-                @treasureListener = @makeListener(@treasureFields, @gemFields)
-                @gemListener      = @makeListener(@gemFields, @treasureFields)
-
-            makeListener: (us, them) -> (event) =>
-                if us.notEmpty()
-                    us.low.val  ''
-                    us.high.val ''
-                else
-                    us.low.val  @LOW
-                    us.high.val @HIGH
-
-                # TODO: Is it faster to do this always or to check if .notEmpty() first?
-                them.low.val  ''
-                them.high.val ''
-
-            init: ->
-                @treasureFields.img.click @treasureListener
-                @gemFields.img.click      @gemListener
-
-                # Make the currency buttons look clickable by changing the cursor when you
-                # hover over them.
-                @treasureFields.img.css 'cursor', 'pointer'
-                @gemFields.img.css      'cursor', 'pointer'
-
-                if AH_DEFAULT_CURRENCY?
-                    filterer.showOnly AH_DEFAULT_CURRENCY
-
-            showOnly: (currency) ->
-                switch currency
-                    when TREASURE
-                        @treasureListener()
-                    when GEMS
-                        @gemListener()
-                    else
-                        throw new Error "CurrencyFilterer.showOnly called with invalid currency: #{currency}"
-
-                findMatches('input[type=button][value=Search]', 1, 1).click()
-
-        filterer = new CurrencyFilterer(
-            # Treasure
-            new CurrencyFields(
-                findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1),
-                findMatches('input[name=tl]', 1, 1),
-                findMatches('input[name=th]', 1, 1),
-            ),
-
-            # Gems
-            new CurrencyFields(
-                findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1),
-                findMatches('input[name=gl]', 1, 1),
-                findMatches('input[name=gh]', 1, 1),
-            ),
-        )
-
-        filterer.init()
-        console.log filterer
-
-# 3}}}
+        # }}}4
+    # }}}3
 scriptHandler.register(
     new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
     auctionHouse,
 )
 
-# 2}}}
+# }}}2
 scriptHandler.think()
