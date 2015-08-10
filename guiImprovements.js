@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.18.1
+// @version      1.19.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -214,6 +214,8 @@ lair = function() {
         return findMatches('button#no', 1, 1).click();
       }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
     }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+  } else if (findMatches('img[src*="button_bond_inactive.png"]', 0, 1).length) {
+    return document.title = 'Bonded!';
   }
 };
 
