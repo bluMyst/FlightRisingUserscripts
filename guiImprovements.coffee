@@ -271,6 +271,7 @@ scriptHandler.register(
 )
 
 # Auction House {{{2
+#TODO: By making the submit button a non submit-type button, pressing enter on the inputs no longer works. Fix it!
 auctionHouse = ->
     class AuctionListing # {{{3
         constructor: (@element) ->
