@@ -543,7 +543,6 @@ auctionHouse = ->
             browseAllBackup()
         ), 400)
 
-        # }}}4
     # }}}3
 scriptHandler.register(
     new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
