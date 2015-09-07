@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.19.0
+// @version      1.19.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -460,6 +460,14 @@ auctionHouse = function() {
     button.attr('type', 'button');
     button.click(function() {
       return browseAllBackup();
+    });
+    findMatches('form#searching input[type=text]').keydown(function(e) {
+      if (!e) {
+        e = window.event;
+      }
+      if (e.keyCode === 13) {
+        return button.click();
+      }
     });
     return setTimeout((function() {
       return browseAllBackup();

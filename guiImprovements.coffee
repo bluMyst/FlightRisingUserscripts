@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.19.0
+// @version      1.19.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -422,7 +422,7 @@ auctionHouse = ->
 
         updateListings()
 
-        # Overwrite browseAll() {{{4
+        # Overwrite browseAll() and change submit button {{{4
         form = new FormData findMatches('form#searching', 1, 1)
 
         browseAllBackup = window.browseAll = (args...) -> # {{{5
@@ -530,6 +530,14 @@ auctionHouse = ->
         button.attr('type', 'button')
         button.click(->
             browseAllBackup()
+        )
+
+        # Changing submit button from being type=submit to type=input means that
+        # pressing enter on any part of the form will no longer auto-submit.
+        # So this is a workaround.
+        findMatches('form#searching input[type=text]').keydown((e) ->
+            if !e then e = window.event # TODO: no idea what this is for
+            if e.keyCode == 13 then button.click()
         )
 
         setTimeout((->
