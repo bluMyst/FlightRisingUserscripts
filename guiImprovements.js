@@ -8,8 +8,14 @@
 // @version      1.19.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
 // ==/UserScript==
+ */
+
+/* General notes {{{1
+ * You can catch all ajax requests with $(document).ajaxComplete(listener)
+ * http://api.jquery.com/ajaxcomplete/
  */
 
 /* Features and changes {{{1
@@ -33,7 +39,7 @@ Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, newHTML, scriptHandler, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, PersistentObject, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, foodDB, hiloGame, lair, marketplace, newHTML, scriptHandler, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -59,6 +65,58 @@ BBB_BLINK_TIMEOUT = 250;
 exit = function() {
   throw new Error('Not an error just exiting early');
 };
+
+PersistentObject = (function() {
+  function PersistentObject(name1) {
+    this.name = name1;
+    this.object = JSON.parse(GM_getValue(this.name) || '{}');
+  }
+
+  PersistentObject.prototype.save = function() {
+    return GM_setValue(this.name, JSON.stringify(this.object));
+  };
+
+  PersistentObject.prototype.set = function(key, value) {
+    if (this.object[key] !== value) {
+      this.object[key] = value;
+      return this.save();
+    }
+  };
+
+  PersistentObject.prototype.get = function(key) {
+    return this.object[key];
+  };
+
+  return PersistentObject;
+
+})();
+
+foodDB = new PersistentObject('foodDB');
+
+$(document).ajaxComplete(function(event, jqXHR, ajaxOptions) {
+  var foodValue, name, parsedHTML;
+  if (/includes\/itemajax\.php/.test(ajaxOptions.url)) {
+    console.log('ajaxComplete event caught.');
+    console.log('event:', event);
+    console.log('jqXHR:', jqXHR);
+    console.log('ajaxOptions:', ajaxOptions);
+    parsedHTML = $.parseHTML(jqXHR.responseText);
+    console.log('parsed HTML:', parsedHTML);
+    foodValue = /Food Points: (\d+)/.exec(jqXHR.responseText);
+    name = $(parsedHTML[0]).find('div:nth-child(1) > div:nth-child(1)').text();
+    if (foodValue) {
+      console.log('Item is food!', foodValue);
+      foodValue = parseInt(foodValue[1]);
+      console.log("Food value of " + name + ":", foodValue);
+      foodDB.set(name, foodValue);
+      return console.log(foodDB.object);
+    } else {
+      return console.log('Not food.');
+    }
+  } else {
+    return console.log('Ignored AJAX request for:', ajaxOptions.url);
+  }
+});
 
 UsersubscriptHandler = (function() {
 
@@ -232,10 +290,12 @@ auctionHouse = function() {
       this.priceEA = this.price / this.numberOfItems;
       this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
       this.name = this.nameElement.text();
+      this.foodValue = foodDB.get(this.name);
+      this.pricePerFood = this.price / (this.foodValue * this.numberOfItems);
     }
 
     AuctionListing.prototype.modifyElement = function() {
-      var priceEAString, priceString, target;
+      var priceEAString, pricePerFoodString, priceString, target;
       target = this.button[0].childNodes[2];
       if (target == null) {
         console.warn("Tried to modifyElement() for " + this.name + " @ " + this.price + " but the auction expired(?).");
@@ -245,8 +305,11 @@ auctionHouse = function() {
         throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
       }
       priceString = numberWithCommas(this.price);
-      priceEAString = numberWithCommas(Math.round(this.priceEA));
-      if (this.numberOfItems > 1) {
+      if (this.foodValue) {
+        pricePerFoodString = numberWithCommas(Math.round(this.pricePerFood));
+        target.textContent = " " + priceString + " (" + pricePerFoodString + "/fp)";
+      } else if (this.numberOfItems > 1) {
+        priceEAString = numberWithCommas(Math.round(this.priceEA));
         target.textContent = " " + priceString + " (" + priceEAString + " ea)";
       } else {
         target.textContent = " " + priceString;

@@ -7,8 +7,14 @@
 // @version      1.19.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
-// @grant        none
+// @grant        GM_getValue
+// @grant        GM_setValue
 // ==/UserScript==
+###
+
+### General notes {{{1
+# You can catch all ajax requests with $(document).ajaxComplete(listener)
+# http://api.jquery.com/ajaxcomplete/
 ###
 
 ### Features and changes {{{1
@@ -89,6 +95,51 @@ BBB_BLINK_TIMEOUT = 250
 # Functions and classes {{{1
 exit = ->
     throw new Error 'Not an error just exiting early'
+
+# Food value database {{{1
+class PersistentObject
+    constructor: (@name) ->
+        @object = JSON.parse(
+            GM_getValue(@name) or '{}'
+        )
+
+    save: ->
+        GM_setValue(@name, JSON.stringify(@object))
+
+    set: (key, value) ->
+        if @object[key] != value
+            @object[key] = value
+            @save()
+
+    get: (key) ->
+        return @object[key]
+
+foodDB = new PersistentObject('foodDB')
+
+$(document).ajaxComplete((event, jqXHR, ajaxOptions) ->
+    if /includes\/itemajax\.php/.test(ajaxOptions.url)
+        console.log 'ajaxComplete event caught.'
+        console.log 'event:', event
+        console.log 'jqXHR:', jqXHR
+        console.log 'ajaxOptions:', ajaxOptions
+
+        parsedHTML = $.parseHTML jqXHR.responseText
+        console.log 'parsed HTML:', parsedHTML
+
+        foodValue = /Food Points: (\d+)/.exec(jqXHR.responseText)
+        name = $(parsedHTML[0]).find('div:nth-child(1) > div:nth-child(1)').text()
+
+        if foodValue
+            console.log 'Item is food!', foodValue
+            foodValue = parseInt(foodValue[1])
+            console.log "Food value of #{name}:", foodValue
+            foodDB.set(name, foodValue)
+            console.log foodDB.object
+        else
+            console.log 'Not food.'
+    else
+        console.log 'Ignored AJAX request for:', ajaxOptions.url
+)
 
 class UsersubscriptHandler # {{{2
     ###
@@ -287,6 +338,9 @@ auctionHouse = ->
             @nameElement = @element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)')
             @name        = @nameElement.text()
 
+            @foodValue    = foodDB.get(@name)
+            @pricePerFood = @price / (@foodValue * @numberOfItems)
+
         modifyElement: ->
             # Modifies @element to include some extra information.
             # This is the straightforwad method but jQuery removes everything but the
@@ -303,10 +357,15 @@ auctionHouse = ->
             if not safeParseInt(target.textContent) == @price
                 throw new Error("Tried to modify an auction house item but the price didn't match expectations.")
 
-            priceString   = numberWithCommas @price
-            priceEAString = numberWithCommas Math.round @priceEA
+            priceString = numberWithCommas @price
 
-            if @numberOfItems > 1
+            # TODO: Clean this code up.
+            # TODO: Code breaks on certain searches and tab switches, lasts until refresh.
+            if @foodValue
+                pricePerFoodString = numberWithCommas Math.round @pricePerFood
+                target.textContent = " #{priceString} (#{pricePerFoodString}/fp)"
+            else if @numberOfItems > 1
+                priceEAString = numberWithCommas Math.round @priceEA
                 target.textContent = " #{priceString} (#{priceEAString} ea)"
             else
                 target.textContent = " #{priceString}"
