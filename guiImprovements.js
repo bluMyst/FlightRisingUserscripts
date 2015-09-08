@@ -453,7 +453,7 @@ auctionHouse = function() {
         return setTimeout((function() {
           window.browseAll = browseAllBackup;
           return updateListings();
-        }), 20);
+        }), 100);
       });
     };
     button = findMatches('input#go', 1, 1);

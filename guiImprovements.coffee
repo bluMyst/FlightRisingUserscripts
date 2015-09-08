@@ -521,7 +521,7 @@ auctionHouse = ->
                 setTimeout((->
                     window.browseAll = browseAllBackup
                     updateListings()
-                ), 20)
+                ), 100)
             )
 
         # Modify submit button {{{5
