@@ -97,11 +97,7 @@ $(document).ajaxComplete(function(event, jqXHR, ajaxOptions) {
   var foodValue, name, parsedHTML;
   if (/includes\/itemajax\.php/.test(ajaxOptions.url)) {
     console.log('ajaxComplete event caught.');
-    console.log('event:', event);
-    console.log('jqXHR:', jqXHR);
-    console.log('ajaxOptions:', ajaxOptions);
     parsedHTML = $.parseHTML(jqXHR.responseText);
-    console.log('parsed HTML:', parsedHTML);
     foodValue = /Food Points: (\d+)/.exec(jqXHR.responseText);
     name = $(parsedHTML[0]).find('div:nth-child(1) > div:nth-child(1)').text();
     if (foodValue) {
@@ -109,7 +105,7 @@ $(document).ajaxComplete(function(event, jqXHR, ajaxOptions) {
       foodValue = parseInt(foodValue[1]);
       console.log("Food value of " + name + ":", foodValue);
       foodDB.set(name, foodValue);
-      return console.log(foodDB.object);
+      return console.log("foodDB now contains " + (Object.keys(foodDB.object).length) + " items.");
     } else {
       return console.log('Not food.');
     }
@@ -431,10 +427,10 @@ auctionHouse = function() {
     };
     updateListings();
     form = new FormData(findMatches('form#searching', 1, 1));
-    browseAllBackup = window.browseAll = function() {
+    browseAllBackup = window.browseAllBackup = window.browseAll = function() {
       var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, name, postData, ref, ref1, th, thl, tl, tll;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-      console.log('browseAll called with', args);
+      console.log('hacked browseAll called with', args);
       postData = {};
       postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
       if (postData.page == null) {

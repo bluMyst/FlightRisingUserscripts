@@ -119,12 +119,7 @@ foodDB = new PersistentObject('foodDB')
 $(document).ajaxComplete((event, jqXHR, ajaxOptions) ->
     if /includes\/itemajax\.php/.test(ajaxOptions.url)
         console.log 'ajaxComplete event caught.'
-        console.log 'event:', event
-        console.log 'jqXHR:', jqXHR
-        console.log 'ajaxOptions:', ajaxOptions
-
         parsedHTML = $.parseHTML jqXHR.responseText
-        console.log 'parsed HTML:', parsedHTML
 
         foodValue = /Food Points: (\d+)/.exec(jqXHR.responseText)
         name = $(parsedHTML[0]).find('div:nth-child(1) > div:nth-child(1)').text()
@@ -134,7 +129,9 @@ $(document).ajaxComplete((event, jqXHR, ajaxOptions) ->
             foodValue = parseInt(foodValue[1])
             console.log "Food value of #{name}:", foodValue
             foodDB.set(name, foodValue)
-            console.log foodDB.object
+
+            # NOTE: Object.keys only works in ECMAScript >=5
+            console.log "foodDB now contains #{Object.keys(foodDB.object).length} items."
         else
             console.log 'Not food.'
     else
@@ -483,8 +480,8 @@ auctionHouse = ->
         # Overwrite browseAll() and change submit button {{{4
         form = new FormData findMatches('form#searching', 1, 1)
 
-        browseAllBackup = window.browseAll = (args...) -> # {{{5
-            console.log 'browseAll called with', args
+        browseAllBackup = window.browseAllBackup = window.browseAll = (args...) -> # {{{5
+            console.log 'hacked browseAll called with', args
             # tl = treasure low  gh = gems high
             # Arguments are:
             # tab, page, [maybe cat], [lohi], [maybe name], ordering, direct
