@@ -9,7 +9,7 @@ sell = (id, nListings, price, quantity=1) ->
     if nListings <= 0 then return
 
     # BUG: quantities over 1 are untested and probably won't work.
-    itemInList = findMatches("a[rel][onclick*='\\'#{id}\\'']", 1, 1)
+    itemInList = findMatches("a[rel][onclick*='\\'#{id}\\'']")
 
     # Always choose the last one in the list.
     itemInList = $ itemInList[itemInList.length-1]
@@ -26,7 +26,7 @@ sell = (id, nListings, price, quantity=1) ->
         # TODO: price is always in treasure for now
         treasureRadio.click()
         treasurePrice.val price.toString()
-        quantityDropdown.val quantity.toString()
+        quantityDropdown.val quantity
 
         # TODO: duration is always 7 days for now
         durationDropdown.val 3

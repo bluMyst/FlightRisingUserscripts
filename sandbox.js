@@ -22,7 +22,7 @@ sell = function(id, nListings, price, quantity) {
   if (nListings <= 0) {
     return;
   }
-  itemInList = findMatches("a[rel][onclick*='\\'" + id + "\\'']", 1, 1);
+  itemInList = findMatches("a[rel][onclick*='\\'" + id + "\\'']");
   itemInList = $(itemInList[itemInList.length - 1]);
   itemInList.click();
   return setTimeout((function() {
@@ -35,7 +35,7 @@ sell = function(id, nListings, price, quantity) {
     postAuctionButton = findMatches('input[type=submit][value="Post Auction"]', 1, 1);
     treasureRadio.click();
     treasurePrice.val(price.toString());
-    quantityDropdown.val(quantity.toString());
+    quantityDropdown.val(quantity);
     durationDropdown.val(3);
     return humanTimeout((function() {
       postAuctionButton.click();
