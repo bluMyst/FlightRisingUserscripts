@@ -118,7 +118,6 @@ foodDB = new PersistentObject('foodDB')
 
 $(document).ajaxComplete((event, jqXHR, ajaxOptions) ->
     if /includes\/itemajax\.php/.test(ajaxOptions.url)
-        console.log 'ajaxComplete event caught.'
         parsedHTML = $.parseHTML jqXHR.responseText
 
         foodValue = /Food Points: (\d+)/.exec(jqXHR.responseText)
@@ -132,8 +131,6 @@ $(document).ajaxComplete((event, jqXHR, ajaxOptions) ->
 
             # NOTE: Object.keys only works in ECMAScript >=5
             console.log "foodDB now contains #{Object.keys(foodDB.object).length} items."
-        else
-            console.log 'Not food.'
     else
         console.log 'Ignored AJAX request for:', ajaxOptions.url
 )

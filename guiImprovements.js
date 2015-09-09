@@ -96,7 +96,6 @@ foodDB = new PersistentObject('foodDB');
 $(document).ajaxComplete(function(event, jqXHR, ajaxOptions) {
   var foodValue, name, parsedHTML;
   if (/includes\/itemajax\.php/.test(ajaxOptions.url)) {
-    console.log('ajaxComplete event caught.');
     parsedHTML = $.parseHTML(jqXHR.responseText);
     foodValue = /Food Points: (\d+)/.exec(jqXHR.responseText);
     name = $(parsedHTML[0]).find('div:nth-child(1) > div:nth-child(1)').text();
@@ -106,8 +105,6 @@ $(document).ajaxComplete(function(event, jqXHR, ajaxOptions) {
       console.log("Food value of " + name + ":", foodValue);
       foodDB.set(name, foodValue);
       return console.log("foodDB now contains " + (Object.keys(foodDB.object).length) + " items.");
-    } else {
-      return console.log('Not food.');
     }
   } else {
     return console.log('Ignored AJAX request for:', ajaxOptions.url);
