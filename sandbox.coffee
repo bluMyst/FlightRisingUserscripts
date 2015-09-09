@@ -6,6 +6,8 @@ humanTimeout = (f, extraWait=0) ->
     setTimeout f, randInt(HUMAN_TIMEOUT_MIN+extraWait, HUMAN_TIMEOUT_MAX+extraWait)
 
 sell = (id, nListings, price, quantity=1) ->
+    if nListings <= 0 then return
+
     # BUG: quantities over 1 are untested and probably won't work.
     itemInList = findMatches("a[rel][onclick*='\\'#{id}\\'']", 1, 1)
 

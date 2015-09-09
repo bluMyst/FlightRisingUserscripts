@@ -19,6 +19,9 @@ sell = function(id, nListings, price, quantity) {
   if (quantity == null) {
     quantity = 1;
   }
+  if (nListings <= 0) {
+    return;
+  }
   itemInList = findMatches("a[rel][onclick*='\\'" + id + "\\'']", 1, 1);
   itemInList = $(itemInList[itemInList.length - 1]);
   itemInList.click();
