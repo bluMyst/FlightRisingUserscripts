@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.19.1
+// @version      1.20.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -32,8 +32,11 @@ Baldwin's Bubbling Brew:
 Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
+
+Mail:
+- Auto-collects attachments.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, newHTML, scriptHandler, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, messages, newHTML, scriptHandler, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -476,5 +479,17 @@ auctionHouse = function() {
 };
 
 scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouse);
+
+messages = function() {
+  return setTimeout((function() {
+    findMatches('button#take-items', 1, 1).click();
+    return setTimeout((function() {
+      findMatches('button#confirm', 1, 1).click();
+      return document.title = 'Collected!';
+    }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+  }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+};
+
+scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'), messages);
 
 scriptHandler.think();

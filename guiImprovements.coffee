@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.19.1
+// @version      1.20.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -31,6 +31,9 @@ Baldwin's Bubbling Brew:
 Higher or Lower game:
 - Automatically clicks 'play again'.
 - Added keyboard shortcuts for each of the guesses.
+
+Mail:
+- Auto-collects attachments.
 ###
 
 # Consts {{{1
@@ -547,6 +550,29 @@ auctionHouse = ->
 scriptHandler.register(
     new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
     auctionHouse,
+)
+
+# Messages (auto-collect) {{{2
+messages = ->
+
+    setTimeout(
+        (->
+            findMatches('button#take-items', 1, 1).click()
+
+            setTimeout(
+                (->
+                    findMatches('button#confirm', 1, 1).click()
+                    document.title = 'Collected!'
+                )
+                randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX),
+            )
+        ),
+        randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX),
+    )
+
+scriptHandler.register(
+    new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'),
+    messages,
 )
 
 # }}}2
