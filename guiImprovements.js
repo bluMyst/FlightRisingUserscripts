@@ -106,8 +106,6 @@ $(document).ajaxComplete(function(event, jqXHR, ajaxOptions) {
       foodDB.set(name, foodValue);
       return console.log("foodDB now contains " + (Object.keys(foodDB.object).length) + " items.");
     }
-  } else {
-    return console.log('Ignored AJAX request for:', ajaxOptions.url);
   }
 });
 

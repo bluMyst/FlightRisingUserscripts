@@ -131,8 +131,6 @@ $(document).ajaxComplete((event, jqXHR, ajaxOptions) ->
 
             # NOTE: Object.keys only works in ECMAScript >=5
             console.log "foodDB now contains #{Object.keys(foodDB.object).length} items."
-    else
-        console.log 'Ignored AJAX request for:', ajaxOptions.url
 )
 
 class UsersubscriptHandler # {{{2
