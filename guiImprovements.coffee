@@ -357,7 +357,7 @@ auctionHouse = ->
             priceString = numberWithCommas @price
 
             # TODO: Clean this code up.
-            # TODO: Code breaks on certain searches and tab switches, lasts until refresh.
+            # TODO: Code breaks on certain tab switches, lasts until refresh.
             if @foodValue
                 pricePerFoodString = numberWithCommas Math.round @pricePerFood
                 target.textContent = " #{priceString} (#{pricePerFoodString}/fp)"
@@ -457,7 +457,7 @@ auctionHouse = ->
 
     filterer.init()
 
-    # }}}3
+
     if getTab() != 'dragons' # {{{3
         # Add a clear button for item name and put it right above the textbox. {{{4
         itemNameText = $('#searching > div:nth-child(1)')
@@ -575,6 +575,7 @@ auctionHouse = ->
                 # TODO This timeout is necessary but if you click too fast you can
                 #      end up accidentally calling the original browseAll() instead.
                 setTimeout((->
+                    console.log "browseAll overwritten"
                     window.browseAll = browseAllBackup
                     updateListings()
                 ), 100)
@@ -594,6 +595,20 @@ auctionHouse = ->
             if !e then e = window.event # TODO: no idea what this is for
             if e.keyCode == 13 then button.click()
         )
+
+        # Add an 'update formatting' button, since my code can't be trusted to
+        # figure that kinda stuff out on its own apparently.
+        # #go is the submit button
+        updateButton = $('''
+            <input type=button value="Update formatting" class=mb_button>
+        ''')
+
+        updateButton.click(->
+            window.browseAll = window.browseAllBackup = browseAllBackup
+            updateListings()
+        )
+
+        findMatches('#go', 1, 1).after(updateButton)
 
         setTimeout((->
             browseAllBackup()

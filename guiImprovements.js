@@ -276,7 +276,7 @@ lair = function() {
 scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'), lair);
 
 auctionHouse = function() {
-  var AuctionListing, CurrencyFields, CurrencyFilterer, browseAllBackup, button, filterer, form, getTab, itemNameText, updateListings;
+  var AuctionListing, CurrencyFields, CurrencyFilterer, browseAllBackup, button, filterer, form, getTab, itemNameText, updateButton, updateListings;
   AuctionListing = (function() {
     function AuctionListing(element) {
       this.element = element;
@@ -510,6 +510,7 @@ auctionHouse = function() {
       }).done(function(stuff) {
         findMatches("#ah_left", 1, 1).html(stuff);
         return setTimeout((function() {
+          console.log("browseAll overwritten");
           window.browseAll = browseAllBackup;
           return updateListings();
         }), 100);
@@ -528,6 +529,12 @@ auctionHouse = function() {
         return button.click();
       }
     });
+    updateButton = $('<input type=button value="Update formatting" class=mb_button>');
+    updateButton.click(function() {
+      window.browseAll = window.browseAllBackup = browseAllBackup;
+      return updateListings();
+    });
+    findMatches('#go', 1, 1).after(updateButton);
     return setTimeout((function() {
       return browseAllBackup();
     }), 400);
