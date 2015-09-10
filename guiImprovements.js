@@ -5,10 +5,10 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.20.0
+// @version      1.21.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
-// @grant        none
+// @grant        GM_addStyle
 // ==/UserScript==
  */
 
@@ -35,8 +35,9 @@ Higher or Lower game:
 
 Mail:
 - Auto-collects attachments.
+- Selecting a message for deletion highlights the whole thing.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, CLICK_TIMEOUT_MAX, CLICK_TIMEOUT_MIN, FormData, GEMS, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, messages, newHTML, scriptHandler, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, message, messages, newHTML, scriptHandler, setHumanTimeout, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -53,14 +54,21 @@ AH_UPDATE_DELAY = 2000;
 
 AH_DEFAULT_CURRENCY = void 0;
 
-CLICK_TIMEOUT_MIN = 300;
+HUMAN_TIMEOUT_MIN = 300;
 
-CLICK_TIMEOUT_MAX = 1000;
+HUMAN_TIMEOUT_MAX = 1000;
 
 BBB_BLINK_TIMEOUT = 250;
 
 exit = function() {
   throw new Error('Not an error just exiting early');
+};
+
+setHumanTimeout = function(f, extraTime) {
+  if (extraTime == null) {
+    extraTime = 0;
+  }
+  return setTimeout(f, randInt(HUMAN_TIMEOUT_MIN + extraTime, HUMAN_TIMEOUT_MAX + extraTime));
 };
 
 UsersubscriptHandler = (function() {
@@ -185,9 +193,9 @@ hiloGame = function() {
   if (guesses > 0) {
     playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
     if (playAgain.length) {
-      return setTimeout((function() {
+      return setHumanTimeout(function() {
         return playAgain.click();
-      }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+      });
     } else {
       findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.');
       buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1);
@@ -211,12 +219,12 @@ scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=hilo", 
 lair = function() {
   var bondButton;
   if ((bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length) {
-    return setTimeout((function() {
+    return setHumanTimeout(function() {
       bondButton.click();
-      return setTimeout((function() {
+      return setHumanTimeout(function() {
         return findMatches('button#no', 1, 1).click();
-      }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
-    }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+      });
+    });
   } else if (findMatches('img[src*="button_bond_inactive.png"]', 0, 1).length) {
     return document.title = 'Bonded!';
   }
@@ -480,16 +488,32 @@ auctionHouse = function() {
 
 scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouse);
 
-messages = function() {
-  return setTimeout((function() {
+message = function() {
+  return setHumanTimeout(function() {
     findMatches('button#take-items', 1, 1).click();
-    return setTimeout((function() {
+    return setHumanTimeout(function() {
       findMatches('button#confirm', 1, 1).click();
       return document.title = 'Collected!';
-    }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
-  }), randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX));
+    });
+  });
 };
 
-scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'), messages);
+scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'), message);
+
+messages = function() {
+  GM_addStyle('#ajaxbody tr.highlight-tr.selected-tr {\n    background-color: #CAA;\n}\n\n#ajaxbody tr.selected-tr {\n    background-color: #CBB;\n}');
+  return findMatches('#ajaxbody tr input[type=checkbox]').click(function(event) {
+    var target, tr;
+    target = $(event.target);
+    tr = target.parents('tr');
+    if (target.prop('checked')) {
+      return tr.addClass('selected-tr');
+    } else {
+      return tr.removeClass('selected-tr');
+    }
+  });
+};
+
+scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs$', 'i'), messages);
 
 scriptHandler.think();

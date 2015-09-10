@@ -4,10 +4,10 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.20.0
+// @version      1.21.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
-// @grant        none
+// @grant        GM_addStyle
 // ==/UserScript==
 ###
 
@@ -34,6 +34,7 @@ Higher or Lower game:
 
 Mail:
 - Auto-collects attachments.
+- Selecting a message for deletion highlights the whole thing.
 ###
 
 # Consts {{{1
@@ -83,15 +84,24 @@ AH_UPDATE_DELAY     = 2000
 # Can be TREASURE or GEMS
 AH_DEFAULT_CURRENCY = undefined
 
-# Min and max times to wait before clicking a button.
-CLICK_TIMEOUT_MIN =  300
-CLICK_TIMEOUT_MAX = 1000
+# Min and max times to wait before clicking a button (among other things).
+HUMAN_TIMEOUT_MIN =  300
+HUMAN_TIMEOUT_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
 # Functions and classes {{{1
-exit = ->
+exit = -> # {{{2
     throw new Error 'Not an error just exiting early'
+
+setHumanTimeout = (f, extraTime=0) ->
+    return setTimeout(
+        f,
+        randInt(
+            HUMAN_TIMEOUT_MIN + extraTime,
+            HUMAN_TIMEOUT_MAX + extraTime,
+        ),
+    )
 
 class UsersubscriptHandler # {{{2
     ###
@@ -221,10 +231,7 @@ hiloGame = ->
     if guesses > 0
         playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1)
         if playAgain.length
-            setTimeout(
-                (-> playAgain.click()),
-                randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX),
-            )
+            setHumanTimeout -> playAgain.click()
         else
             # Add keyboard shortcut instructions in place of the normal useless ones.
             # TODO Removes the thing that tells you how much money you'll win.
@@ -252,19 +259,11 @@ scriptHandler.register(
 # Lair (for auto-bond) {{{2
 lair = ->
     if (bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length
-        setTimeout(
-            (->
-                bondButton.click()
+        setHumanTimeout ->
+            bondButton.click()
 
-                setTimeout(
-                    (->
-                        findMatches('button#no', 1, 1).click()
-                    ),
-                    randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX)
-                )
-            ),
-            randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX)
-        )
+            setHumanTimeout ->
+                findMatches('button#no', 1, 1).click()
     else if findMatches('img[src*="button_bond_inactive.png"]', 0, 1).length
         document.title = 'Bonded!'
 
@@ -552,26 +551,43 @@ scriptHandler.register(
     auctionHouse,
 )
 
-# Messages (auto-collect) {{{2
-messages = ->
+# Message (auto-collect) {{{2
+message = ->
+    setHumanTimeout ->
+        findMatches('button#take-items', 1, 1).click()
 
-    setTimeout(
-        (->
-            findMatches('button#take-items', 1, 1).click()
-
-            setTimeout(
-                (->
-                    findMatches('button#confirm', 1, 1).click()
-                    document.title = 'Collected!'
-                )
-                randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX),
-            )
-        ),
-        randInt(CLICK_TIMEOUT_MIN, CLICK_TIMEOUT_MAX),
-    )
+        setHumanTimeout ->
+            findMatches('button#confirm', 1, 1).click()
+            document.title = 'Collected!'
 
 scriptHandler.register(
     new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'),
+    message,
+)
+
+# Messages window (highlight selected) {{{2
+messages = ->
+    GM_addStyle('''
+        #ajaxbody tr.highlight-tr.selected-tr {
+            background-color: #CAA;
+        }
+
+        #ajaxbody tr.selected-tr {
+            background-color: #CBB;
+        }
+    ''')
+
+    findMatches('#ajaxbody tr input[type=checkbox]').click (event) ->
+        target = $(event.target)
+        tr = target.parents('tr')
+
+        if target.prop('checked')
+            tr.addClass('selected-tr')
+        else
+            tr.removeClass('selected-tr')
+
+scriptHandler.register(
+    new RegExp('http://www1\.flightrising\.com/msgs$', 'i'),
     messages,
 )
 
