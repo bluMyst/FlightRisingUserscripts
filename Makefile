@@ -25,8 +25,8 @@ all: *.js
 
 # The sandbox is meant to be pasted right into a javascript console
 # so ahtoLib is automatically included.
-sandbox: sandbox.js
-	$(CAT) ahtoLib.js sandbox.js | clip
+sandbox%: sandbox%.js
+	$(CAT) ahtoLib.js $< | clip
 
 %: %.js
 	clip < $<
