@@ -11,26 +11,6 @@
 // ==/UserScript==
 ###
 
-injectScript = (f) -> # {{{1
-    # Injects a script to run in the window's namespace.
-    if typeof f == 'function'
-        # Surround the function in parentheses and call it with no arguments.
-        # Otherwise it'll just sit there, like this:
-        # (foo) -> foo(13)
-        # Instead of this:
-        # ( (foo) -> foo(13) )()
-        source = "(#{f})();"
-
-    script = $("""
-        <script type='application/javascript'>
-            #{source}
-        </script>
-    """)
-
-    # append script and immediately remove it to clean up
-    $(document).append script
-    script.remove()
-
 # Messages window (highlight selected) {{{1
 if new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test document.location.href
     GM_addStyle('''

@@ -11,18 +11,6 @@
 // @grant        GM_addStyle
 // ==/UserScript==
  */
-var injectScript;
-
-injectScript = function(f) {
-  var script, source;
-  if (typeof f === 'function') {
-    source = "(" + f + ")();";
-  }
-  script = $("<script type='application/javascript'>\n    " + source + "\n</script>");
-  $(document).append(script);
-  return script.remove();
-};
-
 if (new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test(document.location.href)) {
   GM_addStyle('#ajaxbody tr.highlight-tr.selected-tr {\n    background-color: #CAA;\n}\n\n#ajaxbody tr.selected-tr {\n    background-color: #CBB;\n}');
   findMatches('#ajaxbody tr input[type=checkbox]').click(function(event) {
