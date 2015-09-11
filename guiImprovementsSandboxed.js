@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements Sandboxed Portion
 // @description  Runs potentially unsafe code in a protective sandbox.
 // @namespace    ahto
-// @version      1.0.0
+// @version      1.1.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        GM_addStyle
