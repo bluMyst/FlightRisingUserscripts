@@ -28,5 +28,8 @@ all: *.js
 sandbox%: sandbox%.js
 	$(CAT) ahtoLib.js $< | clip
 
+sandbox: sandbox.js
+	$(CAT) ahtoLib.js $< | clip
+
 %: %.js
 	clip < $<
