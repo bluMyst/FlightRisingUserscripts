@@ -37,7 +37,7 @@ Mail:
 - Auto-collects attachments.
 - Selecting a message for deletion highlights the whole thing.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouseBuy, auctionHouseSell, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, injectScript, lair, marketplace, message, newHTML, scriptHandler, setHumanTimeout, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CurrencyFields, CurrencyFilterer, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, blinker, bondButton, browseAllBackup, bubble, button, buttonHi, buttonLo, buttonTitle, currentTreasure, exit, filterer, form, getTab, guesses, injectScript, instruct, itemNameText, j, len, newHTML, playAgain, price, ref, sell, setHumanTimeout, treasureIndicator, updateButton, updateListings, urlMatches,
   slice = [].slice;
 
 TREASURE = 0;
@@ -58,7 +58,7 @@ HUMAN_TIMEOUT_MIN = 300;
 
 HUMAN_TIMEOUT_MAX = 1000;
 
-BBB_BLINK_TIMEOUT = 250;
+BBB_BLINK_TIMEOUT = 500;
 
 LOADING_WAIT = 1000;
 
@@ -83,45 +83,9 @@ injectScript = function(f) {
   return script.remove();
 };
 
-UsersubscriptHandler = (function() {
-
-  /*
-   * Handles 'usersubscripts', like a userscript but embedded in this bigger
-   * userscript. Another way to think about it is, this object runs certain
-   * functions if certain associated regexes match.
-   */
-  function UsersubscriptHandler() {
-    this.scripts = [];
-  }
-
-  UsersubscriptHandler.prototype.register = function(regex, func) {
-    if (typeof regex === 'string') {
-      regex = new RegExp(regex);
-    }
-    return this.scripts.push({
-      regex: regex,
-      func: func
-    });
-  };
-
-  UsersubscriptHandler.prototype.think = function() {
-    var j, len, ref, results, script;
-    ref = this.scripts;
-    results = [];
-    for (j = 0, len = ref.length; j < len; j++) {
-      script = ref[j];
-      if (script.regex.test(window.location.href)) {
-        results.push(script.func());
-      } else {
-        results.push(void 0);
-      }
-    }
-    return results;
-  };
-
-  return UsersubscriptHandler;
-
-})();
+urlMatches = function(regexp) {
+  return regexp.test(window.location.href);
+};
 
 FormData = (function() {
   function FormData(form1) {
@@ -157,10 +121,7 @@ if (/www1/.test(window.location.href)) {
   treasureIndicator.text(currentTreasure);
 }
 
-scriptHandler = new UsersubscriptHandler();
-
-baldwinsBubblingBrew = function() {
-  var blinker, bubble, instruct;
+if (urlMatches(new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'))) {
   if (findMatches("input[value='Collect!']", 0, 1).length) {
     blinker = setInterval((function() {
       if (document.title === 'Ready!') {
@@ -179,40 +140,32 @@ baldwinsBubblingBrew = function() {
     instruct = findMatches('.baldwin-create-instruct', 1, 1);
     bubble.css('padding', '5px').css('right', 'inherit');
     instruct.css('background', 'inherit');
-    return bubble.html(BBB_GUIDE);
+    bubble.html(BBB_GUIDE);
   }
-};
+}
 
-scriptHandler.register(new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'), baldwinsBubblingBrew);
-
-marketplace = function() {
-  var j, len, price, ref, results;
+if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'))) {
   ref = findMatches('#market > div > div:nth-child(3) > div:nth-child(4)', 1);
-  results = [];
   for (j = 0, len = ref.length; j < len; j++) {
     price = ref[j];
     price = $(price);
-    results.push(price.text(numberWithCommas(safeParseInt(price.text()))));
+    price.text(numberWithCommas(safeParseInt(price.text())));
   }
-  return results;
-};
+}
 
-scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'), marketplace);
-
-hiloGame = function() {
-  var buttonHi, buttonLo, guesses, playAgain;
+if (urlMatches(new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i'))) {
   guesses = parseInt(findMatches('#super-container > div:nth-child(2) > div:nth-child(4) > div:nth-child(2)', 1, 1).text());
   if (guesses > 0) {
     playAgain = findMatches('.mb_button[value="Play Again"]', 0, 1);
     if (playAgain.length) {
-      return setHumanTimeout(function() {
+      setHumanTimeout(function() {
         return playAgain.click();
       });
     } else {
       findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.');
       buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1);
       buttonHi = findMatches('map[name=hilo_map] > area[href*="choice=hi"]', 1, 1);
-      return $(document).keypress(function(e) {
+      $(document).keypress(function(e) {
         switch (String.fromCharCode(e.charCode).toLowerCase()) {
           case 'j':
             return buttonLo.click();
@@ -224,30 +177,23 @@ hiloGame = function() {
       });
     }
   }
-};
+}
 
-scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i'), hiloGame);
-
-lair = function() {
-  var bondButton;
+if (urlMatches(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'))) {
   if ((bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length) {
-    return setHumanTimeout(function() {
+    setHumanTimeout(function() {
       bondButton.click();
       return setHumanTimeout(function() {
         return findMatches('button#no', 1, 1).click();
       });
     });
   } else if (findMatches('img[src*="button_bond_inactive.png"]', 0, 1).length) {
-    return document.title = 'Bonded!';
+    document.title = 'Bonded!';
   }
-};
+}
 
-scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'), lair);
-
-auctionHouseBuy = function() {
-  var AuctionListing, CurrencyFields, CurrencyFilterer, browseAllBackup, button, buttonTitle, filterer, form, getTab, itemNameText, updateButton, updateListings;
+if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'))) {
   if (!findMatches('input[value=Search]', 0, 1).length) {
-    console.log('Not on buy tab of AH, so auctionHouseBuy is exiting...');
     return;
   }
   AuctionListing = (function() {
@@ -286,13 +232,13 @@ auctionHouseBuy = function() {
 
   })();
   getTab = function() {
-    var ref, tab;
+    var ref1, tab;
     if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
       tab = tab[1];
     } else {
       tab = 'food';
     }
-    if ((ref = !tab) === 'food' || ref === 'mats' || ref === 'app' || ref === 'dragons' || ref === 'fam' || ref === 'battle' || ref === 'skins' || ref === 'other') {
+    if ((ref1 = !tab) === 'food' || ref1 === 'mats' || ref1 === 'app' || ref1 === 'dragons' || ref1 === 'fam' || ref1 === 'battle' || ref1 === 'skins' || ref1 === 'other') {
       throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
     }
     return tab;
@@ -375,20 +321,20 @@ auctionHouseBuy = function() {
     itemNameText = $('#searching > div:nth-child(1)');
     itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
     updateListings = function() {
-      var i, j, len, listings, results;
+      var i, k, len1, listings, results;
       listings = (function() {
-        var j, len, ref, results;
-        ref = $('#ah_left div[id*=sale]');
+        var k, len1, ref1, results;
+        ref1 = $('#ah_left div[id*=sale]');
         results = [];
-        for (j = 0, len = ref.length; j < len; j++) {
-          i = ref[j];
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          i = ref1[k];
           results.push(new AuctionListing($(i)));
         }
         return results;
       })();
       results = [];
-      for (j = 0, len = listings.length; j < len; j++) {
-        i = listings[j];
+      for (k = 0, len1 = listings.length; k < len1; k++) {
+        i = listings[k];
         results.push(i.modifyElement());
       }
       return results;
@@ -396,11 +342,11 @@ auctionHouseBuy = function() {
     updateListings();
     form = new FormData(findMatches('form#searching', 1, 1));
     browseAllBackup = window.browseAll = function() {
-      var args, cat, filledFields, gh, ghl, gl, gll, i, j, k, len, name, postData, ref, ref1, th, thl, tl, tll;
+      var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, ref2, th, thl, tl, tll;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       console.log('browseAll called with', args);
       postData = {};
-      postData.tab = args[0], postData.page = args[1], j = args.length - 2, postData.ordering = args[j++], postData.direct = args[j++];
+      postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
       if (postData.page == null) {
         postData.page = 1;
 
@@ -445,11 +391,11 @@ auctionHouseBuy = function() {
       th = form.field('th');
       gl = form.field('gl');
       gh = form.field('gh');
-      ref = [tl.length, th.length, gl.length, gh.length], tll = ref[0], thl = ref[1], gll = ref[2], ghl = ref[3];
+      ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
       filledFields = 0;
-      ref1 = [tll, thl, gll, ghl];
-      for (k = 0, len = ref1.length; k < len; k++) {
-        i = ref1[k];
+      ref2 = [tll, thl, gll, ghl];
+      for (l = 0, len1 = ref2.length; l < len1; l++) {
+        i = ref2[l];
         if (i) {
           filledFields += 1;
         }
@@ -505,15 +451,12 @@ auctionHouseBuy = function() {
       window.browseAll = window.browseAllBackup = browseAllBackup;
       return updateListings();
     });
-    return findMatches('#go', 1, 1).after(updateButton);
+    findMatches('#go', 1, 1).after(updateButton);
   }
-};
+}
 
-scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouseBuy);
-
-auctionHouseSell = function() {
-  var sell;
-  return sell = window.sell = function(id, nListings, price, quantity) {
+if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'))) {
+  sell = window.sell = function(id, nListings, price, quantity) {
     var itemInList;
     if (quantity == null) {
       quantity = 1;
@@ -544,26 +487,20 @@ auctionHouseSell = function() {
             $('button#yes').click();
             return setTimeout((function() {
               return sell(id, nListings - 1, price, quantity);
-            }), 1000);
-          }), 1000);
-        }), 1000);
-      }), 1000);
-    }), 1000);
+            }), LOADING_WAIT);
+          }), LOADING_WAIT);
+        }), LOADING_WAIT);
+      }), LOADING_WAIT);
+    }), LOADING_WAIT);
   };
-};
+}
 
-scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'), auctionHouseSell);
-
-message = function() {
-  return setHumanTimeout(function() {
+if (urlMatches(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'))) {
+  setHumanTimeout(function() {
     findMatches('button#take-items', 1, 1).click();
     return setHumanTimeout(function() {
       findMatches('button#confirm', 1, 1).click();
       return document.title = 'Collected!';
     });
   });
-};
-
-scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'), message);
-
-scriptHandler.think();
+}

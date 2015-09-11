@@ -88,7 +88,7 @@ AH_DEFAULT_CURRENCY = undefined
 HUMAN_TIMEOUT_MIN =  300
 HUMAN_TIMEOUT_MAX = 1000
 
-BBB_BLINK_TIMEOUT = 250
+BBB_BLINK_TIMEOUT = 500
 
 # Timeout to wait for something to load. Used all over the place.
 # TODO: Make sure this is used everywhere when we wait an arbitrary length
@@ -128,25 +128,8 @@ injectScript = (f) -> # {{{2
     $(document).append script
     script.remove()
 
-class UsersubscriptHandler # {{{2
-    ###
-    # Handles 'usersubscripts', like a userscript but embedded in this bigger
-    # userscript. Another way to think about it is, this object runs certain
-    # functions if certain associated regexes match.
-    ###
-    constructor: () ->
-        @scripts = []
-
-    register: (regex, func) ->
-        if typeof regex == 'string'
-            regex = new RegExp(regex)
-
-        @scripts.push({regex:regex, func:func})
-
-    think: () ->
-        for script in @scripts
-            if script.regex.test window.location.href
-                script.func()
+urlMatches = (regexp) -> # {{{2
+    return regexp.test window.location.href
 
 class FormData # {{{2
     constructor: (@form) ->
@@ -201,10 +184,8 @@ else
     treasureIndicator.text(currentTreasure)
 
 # Usersubscripts {{{1
-scriptHandler = new UsersubscriptHandler()
-
 # Baldwin's Bubbling Brew {{{2
-baldwinsBubblingBrew = ->
+if urlMatches new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')
     # If there are any collect buttons.
     if findMatches("input[value='Collect!']", 0, 1).length
         blinker = setInterval((->
@@ -226,26 +207,16 @@ baldwinsBubblingBrew = ->
         instruct.css('background', 'inherit')
         bubble.html BBB_GUIDE
 
-scriptHandler.register(
-    new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'),
-    baldwinsBubblingBrew
-)
-
 # Marketplace {{{2
-marketplace = ->
+if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')
     for price in findMatches('#market > div > div:nth-child(3) > div:nth-child(4)', 1)
         price = $(price)
         price.text(
             numberWithCommas safeParseInt price.text()
         )
 
-scriptHandler.register(
-    new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'),
-    marketplace
-)
-
 # HiLo Game {{{2
-hiloGame = ->
+if urlMatches new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')
     guesses = parseInt(
         findMatches(
             '#super-container > div:nth-child(2) > div:nth-child(4) > div:nth-child(2)',
@@ -277,12 +248,8 @@ hiloGame = ->
                         console.log "Got unrechognized charCode: #{e.charCode}"
             )
 
-scriptHandler.register(
-    new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i'),
-    hiloGame,
-)
 # Lair (for auto-bond) {{{2
-lair = ->
+if urlMatches new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')
     if (bondButton = findMatches('img[src*="button_bond.png"]', 0, 1)).length
         setHumanTimeout ->
             bondButton.click()
@@ -292,16 +259,10 @@ lair = ->
     else if findMatches('img[src*="button_bond_inactive.png"]', 0, 1).length
         document.title = 'Bonded!'
 
-scriptHandler.register(
-    new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'),
-    lair,
-)
-
 # Auction House Buy {{{2
-auctionHouseBuy = ->
+if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
     # Check if we're on the buy tab {{{3
     if not findMatches('input[value=Search]', 0, 1).length
-        console.log 'Not on buy tab of AH, so auctionHouseBuy is exiting...'
         return
 
     class AuctionListing # {{{3
@@ -433,7 +394,6 @@ auctionHouseBuy = ->
 
     filterer.init()
 
-    # }}}3
     if getTab() != 'dragons' # {{{3
         # Add a clear button for item name and put it right above the textbox. {{{4
         itemNameText = $('#searching > div:nth-child(1)')
@@ -597,15 +557,10 @@ auctionHouseBuy = ->
         )
 
         findMatches('#go', 1, 1).after(updateButton)
-    # }}}3
-scriptHandler.register(
-    new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
-    auctionHouseBuy,
-)
 
 # Auction House Sell {{{2
-auctionHouseSell = ->
-    sell = window.sell = (id, nListings, price, quantity=1) -> # {{{3
+if urlMatches new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i')
+    sell = window.sell = (id, nListings, price, quantity=1) ->
         if nListings <= 0 then return
 
         # BUG: If quantity * nListings > number of items, stuff will break.
@@ -642,30 +597,17 @@ auctionHouseSell = ->
 
                         setTimeout((->
                             sell(id, nListings-1, price, quantity)
-                        ), 1000)
-                    ), 1000)
-                ), 1000)
-            ), 1000)
-        ), 1000)
-
-scriptHandler.register(
-    new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'),
-    auctionHouseSell,
-)
+                        ), LOADING_WAIT)
+                    ), LOADING_WAIT)
+                ), LOADING_WAIT)
+            ), LOADING_WAIT)
+        ), LOADING_WAIT)
 
 # Message (auto-collect) {{{2
-message = ->
+if urlMatches new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i')
     setHumanTimeout ->
         findMatches('button#take-items', 1, 1).click()
 
         setHumanTimeout ->
             findMatches('button#confirm', 1, 1).click()
             document.title = 'Collected!'
-
-scriptHandler.register(
-    new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'),
-    message,
-)
-
-# }}}2
-scriptHandler.think()
