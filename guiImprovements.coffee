@@ -4,10 +4,10 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.21.0
+// @version      1.21.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
-// @grant        GM_addStyle
+// @grant        none
 // ==/UserScript==
 ###
 
@@ -90,11 +90,16 @@ HUMAN_TIMEOUT_MAX = 1000
 
 BBB_BLINK_TIMEOUT = 250
 
+# Timeout to wait for something to load. Used all over the place.
+# TODO: Make sure this is used everywhere when we wait an arbitrary length
+#       of time for something to finish.
+LOADING_WAIT = 1000
+
 # Functions and classes {{{1
 exit = -> # {{{2
     throw new Error 'Not an error just exiting early'
 
-setHumanTimeout = (f, extraTime=0) ->
+setHumanTimeout = (f, extraTime=0) -> # {{{2
     return setTimeout(
         f,
         randInt(
@@ -272,8 +277,13 @@ scriptHandler.register(
     lair,
 )
 
-# Auction House {{{2
-auctionHouse = ->
+# Auction House Buy {{{2
+auctionHouseBuy = ->
+    # Check if we're on the buy tab {{{3
+    if not findMatches('input[value=Search]', 0, 1).length
+        console.log 'Not on buy tab of AH, so auctionHouseBuy is exiting...'
+        return
+
     class AuctionListing # {{{3
         constructor: (@element) ->
             # WARNING: This might break in the future since it overrelies on :nth-child
@@ -533,6 +543,12 @@ auctionHouse = ->
             browseAllBackup()
         )
 
+        # }}}5
+        setTimeout((->
+            browseAllBackup()
+        ), 400)
+
+        # Enter to submit inputs {{{4
         # Changing submit button from being type=submit to type=input means that
         # pressing enter on any part of the form will no longer auto-submit.
         # So this is a workaround.
@@ -541,14 +557,82 @@ auctionHouse = ->
             if e.keyCode == 13 then button.click()
         )
 
-        setTimeout((->
-            browseAllBackup()
-        ), 400)
+        # Update formatting button {{{4
+        # Add an 'update formatting' button, since my code can't be trusted to
+        # figure that kinda stuff out on its own apparently.
+        # #go is the submit button
+        buttonTitle = '''
+            Tells the userscript to update formatting (show price ea and other information)
+            on this page, since the code for doing that automatically has a tendency to
+            forget.
+        '''
 
+        updateButton = $("""
+            <input type=button value="Update formatting" title="#{buttonTitle}" class=mb_button>
+        """)
+
+        updateButton.click(->
+            window.browseAll = window.browseAllBackup = browseAllBackup
+            updateListings()
+        )
+
+        findMatches('#go', 1, 1).after(updateButton)
     # }}}3
 scriptHandler.register(
     new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'),
-    auctionHouse,
+    auctionHouseBuy,
+)
+
+# Auction House Sell {{{2
+auctionHouseSell = ->
+    #TODO: Verify that we have enough items for each auction.
+    injectScript ->
+        sell = (id, nListings, price, quantity=1) -> # {{{3
+            if nListings <= 0 then return
+
+            # BUG: If quantity * nListings > number of items, stuff will break.
+            itemInList = $("a[rel][onclick*='\\'#{id}\\'']")
+
+            # Always start with the last one in the list.
+            itemInList = $ itemInList[itemInList.length-1]
+            itemInList.click()
+
+            setTimeout((->
+                quantityDropdown  = $('select[name=qty]')
+                durationDropdown  = $('select[name=drtn]')
+                treasurePrice     = $('input[name=treas]')
+                treasureRadio     = $('input[type=radio][name=cur][value=t]')
+                gemRadio          = $('input[type=radio][name=cur][value=g]')
+                postAuctionButton = $('input[type=submit][value="Post Auction"]')
+
+                # TODO: price is always in treasure for now
+                treasureRadio.click()
+                treasurePrice.val price.toString()
+                quantityDropdown.val quantity
+
+                # TODO: duration is always 7 days for now
+                durationDropdown.val 3
+
+                setTimeout((->
+                    postAuctionButton.click()
+
+                    setTimeout((->
+                        $('button#yes').click()
+
+                        setTimeout((->
+                            $('button#yes').click()
+
+                            setTimeout((->
+                                sell(id, nListings-1, price, quantity)
+                            ), 1000)
+                        ), 1000)
+                    ), 1000)
+                ), 1000)
+            ), 1000)
+
+scriptHandler.register(
+    new RegExp('flightrising\.com/main\.php.*action=sell', 'i')
+    auctionHouseSell,
 )
 
 # Message (auto-collect) {{{2
@@ -563,32 +647,6 @@ message = ->
 scriptHandler.register(
     new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'),
     message,
-)
-
-# Messages window (highlight selected) {{{2
-messages = ->
-    GM_addStyle('''
-        #ajaxbody tr.highlight-tr.selected-tr {
-            background-color: #CAA;
-        }
-
-        #ajaxbody tr.selected-tr {
-            background-color: #CBB;
-        }
-    ''')
-
-    findMatches('#ajaxbody tr input[type=checkbox]').click (event) ->
-        target = $(event.target)
-        tr = target.parents('tr')
-
-        if target.prop('checked')
-            tr.addClass('selected-tr')
-        else
-            tr.removeClass('selected-tr')
-
-scriptHandler.register(
-    new RegExp('http://www1\.flightrising\.com/msgs$', 'i'),
-    messages,
 )
 
 # }}}2

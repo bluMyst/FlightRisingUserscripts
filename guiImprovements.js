@@ -5,10 +5,10 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.21.0
+// @version      1.21.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
-// @grant        GM_addStyle
+// @grant        none
 // ==/UserScript==
  */
 
@@ -37,7 +37,7 @@ Mail:
 - Auto-collects attachments.
 - Selecting a message for deletion highlights the whole thing.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouse, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, message, messages, newHTML, scriptHandler, setHumanTimeout, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouseBuy, auctionHouseSell, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, message, newHTML, scriptHandler, setHumanTimeout, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -59,6 +59,8 @@ HUMAN_TIMEOUT_MIN = 300;
 HUMAN_TIMEOUT_MAX = 1000;
 
 BBB_BLINK_TIMEOUT = 250;
+
+LOADING_WAIT = 1000;
 
 exit = function() {
   throw new Error('Not an error just exiting early');
@@ -232,8 +234,12 @@ lair = function() {
 
 scriptHandler.register(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'), lair);
 
-auctionHouse = function() {
-  var AuctionListing, CurrencyFields, CurrencyFilterer, browseAllBackup, button, filterer, form, getTab, itemNameText, updateListings;
+auctionHouseBuy = function() {
+  var AuctionListing, CurrencyFields, CurrencyFilterer, browseAllBackup, button, buttonTitle, filterer, form, getTab, itemNameText, updateButton, updateListings;
+  if (!findMatches('input[value=Search]', 0, 1).length) {
+    console.log('Not on buy tab of AH, so auctionHouseBuy is exiting...');
+    return;
+  }
   AuctionListing = (function() {
     function AuctionListing(element) {
       this.element = element;
@@ -472,6 +478,9 @@ auctionHouse = function() {
     button.click(function() {
       return browseAllBackup();
     });
+    setTimeout((function() {
+      return browseAllBackup();
+    }), 400);
     findMatches('form#searching input[type=text]').keydown(function(e) {
       if (!e) {
         e = window.event;
@@ -480,13 +489,62 @@ auctionHouse = function() {
         return button.click();
       }
     });
-    return setTimeout((function() {
-      return browseAllBackup();
-    }), 400);
+    buttonTitle = 'Tells the userscript to update formatting (show price ea and other information)\non this page, since the code for doing that automatically has a tendency to\nforget.';
+    updateButton = $("<input type=button value=\"Update formatting\" title=\"" + buttonTitle + "\" class=mb_button>");
+    updateButton.click(function() {
+      window.browseAll = window.browseAllBackup = browseAllBackup;
+      return updateListings();
+    });
+    return findMatches('#go', 1, 1).after(updateButton);
   }
 };
 
-scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouse);
+scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouseBuy);
+
+auctionHouseSell = function() {
+  return injectScript(function() {
+    var sell;
+    return sell = function(id, nListings, price, quantity) {
+      var itemInList;
+      if (quantity == null) {
+        quantity = 1;
+      }
+      if (nListings <= 0) {
+        return;
+      }
+      itemInList = $("a[rel][onclick*='\\'" + id + "\\'']");
+      itemInList = $(itemInList[itemInList.length - 1]);
+      itemInList.click();
+      return setTimeout((function() {
+        var durationDropdown, gemRadio, postAuctionButton, quantityDropdown, treasurePrice, treasureRadio;
+        quantityDropdown = $('select[name=qty]');
+        durationDropdown = $('select[name=drtn]');
+        treasurePrice = $('input[name=treas]');
+        treasureRadio = $('input[type=radio][name=cur][value=t]');
+        gemRadio = $('input[type=radio][name=cur][value=g]');
+        postAuctionButton = $('input[type=submit][value="Post Auction"]');
+        treasureRadio.click();
+        treasurePrice.val(price.toString());
+        quantityDropdown.val(quantity);
+        durationDropdown.val(3);
+        return setTimeout((function() {
+          postAuctionButton.click();
+          return setTimeout((function() {
+            $('button#yes').click();
+            return setTimeout((function() {
+              $('button#yes').click();
+              return setTimeout((function() {
+                return sell(id, nListings - 1, price, quantity);
+              }), 1000);
+            }), 1000);
+          }), 1000);
+        }), 1000);
+      }), 1000);
+    };
+  });
+};
+
+scriptHandler.register(new RegExp('flightrising\.com/main\.php.*action=sell', 'i'), auctionHouseSell);
 
 message = function() {
   return setHumanTimeout(function() {
@@ -499,21 +557,5 @@ message = function() {
 };
 
 scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'), message);
-
-messages = function() {
-  GM_addStyle('#ajaxbody tr.highlight-tr.selected-tr {\n    background-color: #CAA;\n}\n\n#ajaxbody tr.selected-tr {\n    background-color: #CBB;\n}');
-  return findMatches('#ajaxbody tr input[type=checkbox]').click(function(event) {
-    var target, tr;
-    target = $(event.target);
-    tr = target.parents('tr');
-    if (target.prop('checked')) {
-      return tr.addClass('selected-tr');
-    } else {
-      return tr.removeClass('selected-tr');
-    }
-  });
-};
-
-scriptHandler.register(new RegExp('http://www1\.flightrising\.com/msgs$', 'i'), messages);
 
 scriptHandler.think();
