@@ -37,7 +37,7 @@ Mail:
 - Auto-collects attachments.
 - Selecting a message for deletion highlights the whole thing.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouseBuy, auctionHouseSell, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, lair, marketplace, message, newHTML, scriptHandler, setHumanTimeout, treasureIndicator,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, BBB_BLINK_TIMEOUT, BBB_GUIDE, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, UsersubscriptHandler, auctionHouseBuy, auctionHouseSell, baldwinsBubblingBrew, currentTreasure, exit, hiloGame, injectScript, lair, marketplace, message, newHTML, scriptHandler, setHumanTimeout, treasureIndicator,
   slice = [].slice;
 
 TREASURE = 0;
@@ -71,6 +71,16 @@ setHumanTimeout = function(f, extraTime) {
     extraTime = 0;
   }
   return setTimeout(f, randInt(HUMAN_TIMEOUT_MIN + extraTime, HUMAN_TIMEOUT_MAX + extraTime));
+};
+
+injectScript = function(f) {
+  var script, source;
+  if (typeof f === 'function') {
+    source = "(" + f + ")();";
+  }
+  script = $("<script type='application/javascript'>\n    " + source + "\n</script>");
+  $(document).append(script);
+  return script.remove();
 };
 
 UsersubscriptHandler = (function() {
@@ -502,49 +512,47 @@ auctionHouseBuy = function() {
 scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'), auctionHouseBuy);
 
 auctionHouseSell = function() {
-  return injectScript(function() {
-    var sell;
-    return sell = function(id, nListings, price, quantity) {
-      var itemInList;
-      if (quantity == null) {
-        quantity = 1;
-      }
-      if (nListings <= 0) {
-        return;
-      }
-      itemInList = $("a[rel][onclick*='\\'" + id + "\\'']");
-      itemInList = $(itemInList[itemInList.length - 1]);
-      itemInList.click();
+  var sell;
+  return sell = window.sell = function(id, nListings, price, quantity) {
+    var itemInList;
+    if (quantity == null) {
+      quantity = 1;
+    }
+    if (nListings <= 0) {
+      return;
+    }
+    itemInList = $("a[rel][onclick*='\\'" + id + "\\'']");
+    itemInList = $(itemInList[itemInList.length - 1]);
+    itemInList.click();
+    return setTimeout((function() {
+      var durationDropdown, gemRadio, postAuctionButton, quantityDropdown, treasurePrice, treasureRadio;
+      quantityDropdown = $('select[name=qty]');
+      durationDropdown = $('select[name=drtn]');
+      treasurePrice = $('input[name=treas]');
+      treasureRadio = $('input[type=radio][name=cur][value=t]');
+      gemRadio = $('input[type=radio][name=cur][value=g]');
+      postAuctionButton = $('input[type=submit][value="Post Auction"]');
+      treasureRadio.click();
+      treasurePrice.val(price.toString());
+      quantityDropdown.val(quantity);
+      durationDropdown.val(3);
       return setTimeout((function() {
-        var durationDropdown, gemRadio, postAuctionButton, quantityDropdown, treasurePrice, treasureRadio;
-        quantityDropdown = $('select[name=qty]');
-        durationDropdown = $('select[name=drtn]');
-        treasurePrice = $('input[name=treas]');
-        treasureRadio = $('input[type=radio][name=cur][value=t]');
-        gemRadio = $('input[type=radio][name=cur][value=g]');
-        postAuctionButton = $('input[type=submit][value="Post Auction"]');
-        treasureRadio.click();
-        treasurePrice.val(price.toString());
-        quantityDropdown.val(quantity);
-        durationDropdown.val(3);
+        postAuctionButton.click();
         return setTimeout((function() {
-          postAuctionButton.click();
+          $('button#yes').click();
           return setTimeout((function() {
             $('button#yes').click();
             return setTimeout((function() {
-              $('button#yes').click();
-              return setTimeout((function() {
-                return sell(id, nListings - 1, price, quantity);
-              }), 1000);
+              return sell(id, nListings - 1, price, quantity);
             }), 1000);
           }), 1000);
         }), 1000);
       }), 1000);
-    };
-  });
+    }), 1000);
+  };
 };
 
-scriptHandler.register(new RegExp('flightrising\.com/main\.php.*action=sell', 'i'), auctionHouseSell);
+scriptHandler.register(new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'), auctionHouseSell);
 
 message = function() {
   return setHumanTimeout(function() {

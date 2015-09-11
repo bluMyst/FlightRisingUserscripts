@@ -108,6 +108,26 @@ setHumanTimeout = (f, extraTime=0) -> # {{{2
         ),
     )
 
+injectScript = (f) -> # {{{2
+    # Injects a script to run in the window's namespace.
+    if typeof f == 'function'
+        # Surround the function in parentheses and call it with no arguments.
+        # Otherwise it'll just sit there, like this:
+        # (foo) -> foo(13)
+        # Instead of this:
+        # ( (foo) -> foo(13) )()
+        source = "(#{f})();"
+
+    script = $("""
+        <script type='application/javascript'>
+            #{source}
+        </script>
+    """)
+
+    # append script and immediately remove it to clean up
+    $(document).append script
+    script.remove()
+
 class UsersubscriptHandler # {{{2
     ###
     # Handles 'usersubscripts', like a userscript but embedded in this bigger
@@ -585,53 +605,51 @@ scriptHandler.register(
 
 # Auction House Sell {{{2
 auctionHouseSell = ->
-    #TODO: Verify that we have enough items for each auction.
-    injectScript ->
-        sell = (id, nListings, price, quantity=1) -> # {{{3
-            if nListings <= 0 then return
+    sell = window.sell = (id, nListings, price, quantity=1) -> # {{{3
+        if nListings <= 0 then return
 
-            # BUG: If quantity * nListings > number of items, stuff will break.
-            itemInList = $("a[rel][onclick*='\\'#{id}\\'']")
+        # BUG: If quantity * nListings > number of items, stuff will break.
+        itemInList = $("a[rel][onclick*='\\'#{id}\\'']")
 
-            # Always start with the last one in the list.
-            itemInList = $ itemInList[itemInList.length-1]
-            itemInList.click()
+        # Always start with the last one in the list.
+        itemInList = $ itemInList[itemInList.length-1]
+        itemInList.click()
+
+        setTimeout((->
+            quantityDropdown  = $('select[name=qty]')
+            durationDropdown  = $('select[name=drtn]')
+            treasurePrice     = $('input[name=treas]')
+            treasureRadio     = $('input[type=radio][name=cur][value=t]')
+            gemRadio          = $('input[type=radio][name=cur][value=g]')
+            postAuctionButton = $('input[type=submit][value="Post Auction"]')
+
+            # TODO: price is always in treasure for now
+            treasureRadio.click()
+            treasurePrice.val price.toString()
+            quantityDropdown.val quantity
+
+            # TODO: duration is always 7 days for now
+            durationDropdown.val 3
 
             setTimeout((->
-                quantityDropdown  = $('select[name=qty]')
-                durationDropdown  = $('select[name=drtn]')
-                treasurePrice     = $('input[name=treas]')
-                treasureRadio     = $('input[type=radio][name=cur][value=t]')
-                gemRadio          = $('input[type=radio][name=cur][value=g]')
-                postAuctionButton = $('input[type=submit][value="Post Auction"]')
-
-                # TODO: price is always in treasure for now
-                treasureRadio.click()
-                treasurePrice.val price.toString()
-                quantityDropdown.val quantity
-
-                # TODO: duration is always 7 days for now
-                durationDropdown.val 3
+                postAuctionButton.click()
 
                 setTimeout((->
-                    postAuctionButton.click()
+                    $('button#yes').click()
 
                     setTimeout((->
                         $('button#yes').click()
 
                         setTimeout((->
-                            $('button#yes').click()
-
-                            setTimeout((->
-                                sell(id, nListings-1, price, quantity)
-                            ), 1000)
+                            sell(id, nListings-1, price, quantity)
                         ), 1000)
                     ), 1000)
                 ), 1000)
             ), 1000)
+        ), 1000)
 
 scriptHandler.register(
-    new RegExp('flightrising\.com/main\.php.*action=sell', 'i')
+    new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'),
     auctionHouseSell,
 )
 
