@@ -162,7 +162,7 @@ if (urlMatches(new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i'))) {
         return playAgain.click();
       });
     } else {
-      findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.');
+      findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html('Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.<br>\nIf you guess correctly, you\'ll win 65 treasure (as of 2015.09.10).');
       buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1);
       buttonHi = findMatches('map[name=hilo_map] > area[href*="choice=hi"]', 1, 1);
       $(document).keypress(function(e) {
@@ -438,9 +438,6 @@ if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'))) {
       return browseAllBackup();
     }), 400);
     findMatches('form#searching input[type=text]').keydown(function(e) {
-      if (!e) {
-        e = window.event;
-      }
       if (e.keyCode === 13) {
         return button.click();
       }

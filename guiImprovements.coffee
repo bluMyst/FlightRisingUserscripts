@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.1
+// @version      1.22.2
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -91,8 +91,6 @@ HUMAN_TIMEOUT_MAX = 1000
 BBB_BLINK_TIMEOUT = 500
 
 # Timeout to wait for something to load. Used all over the place.
-# TODO: Make sure this is used everywhere when we wait an arbitrary length
-#       of time for something to finish.
 LOADING_WAIT = 1000
 
 # Functions and classes {{{1
@@ -230,9 +228,11 @@ if urlMatches new RegExp("http://flightrising\.com/main\.php.*p=hilo", 'i')
             setHumanTimeout -> playAgain.click()
         else
             # Add keyboard shortcut instructions in place of the normal useless ones.
-            # TODO Removes the thing that tells you how much money you'll win.
             findMatches('#super-container > div:nth-child(3) > div:nth-child(3)', 1, 1).html(
-                'Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.'
+                '''
+                Press <b>j (lower)</b> or <b>k (higher)</b>, or use the buttons on the left.<br>
+                If you guess correctly, you'll win 65 treasure (as of 2015.09.10).
+                '''
             )
 
             buttonLo = findMatches('map[name=hilo_map] > area[href*="choice=lo"]', 1, 1)
@@ -533,7 +533,6 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
         # pressing enter on any part of the form will no longer auto-submit.
         # So this is a workaround.
         findMatches('form#searching input[type=text]').keydown((e) ->
-            if !e then e = window.event # TODO: no idea what this is for
             if e.keyCode == 13 then button.click()
         )
 
@@ -563,7 +562,8 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i')
     sell = window.sell = (id, nListings, price, quantity=1) ->
         if nListings <= 0 then return
 
-        # BUG: If quantity * nListings > number of items, stuff will break.
+        # TODO: If quantity * nListings > number of items, stuff will break
+        #       so find a way to test for proper quantity before submitting.
         itemInList = $("a[rel][onclick*='\\'#{id}\\'']")
 
         # Always start with the last one in the list.
