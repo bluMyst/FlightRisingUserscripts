@@ -452,7 +452,10 @@ if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'))) {
   }
 }
 
-if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'))) {
+console.log('outside auction house sell');
+
+if (urlMatches(new RegExp('flightrising\.com/main\.php.*action=sell', 'i'))) {
+  console.log('auction house sell');
   sell = window.sell = function(id, nListings, price, quantity) {
     var itemInList;
     if (quantity == null) {
@@ -476,13 +479,13 @@ if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i'
       treasurePrice.val(price.toString());
       quantityDropdown.val(quantity);
       durationDropdown.val(3);
-      return setTimeout((function() {
+      return setHumanTimeout((function() {
         postAuctionButton.click();
-        return setTimeout((function() {
+        return setHumanTimeout((function() {
           $('button#yes').click();
-          return setTimeout((function() {
+          return setHumanTimeout((function() {
             $('button#yes').click();
-            return setTimeout((function() {
+            return setHumanTimeout((function() {
               return sell(id, nListings - 1, price, quantity);
             }), LOADING_WAIT);
           }), LOADING_WAIT);

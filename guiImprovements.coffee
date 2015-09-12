@@ -558,7 +558,10 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
         findMatches('#go', 1, 1).after(updateButton)
 
 # Auction House Sell {{{2
-if urlMatches new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i')
+console.log 'outside auction house sell'
+if urlMatches new RegExp('flightrising\.com/main\.php.*action=sell', 'i')
+    # TODO: Still won't work. O_o
+    console.log 'auction house sell'
     sell = window.sell = (id, nListings, price, quantity=1) ->
         if nListings <= 0 then return
 
@@ -586,16 +589,16 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*action=sell', 'i')
             # TODO: duration is always 7 days for now
             durationDropdown.val 3
 
-            setTimeout((->
+            setHumanTimeout((->
                 postAuctionButton.click()
 
-                setTimeout((->
+                setHumanTimeout((->
                     $('button#yes').click()
 
-                    setTimeout((->
+                    setHumanTimeout((->
                         $('button#yes').click()
 
-                        setTimeout((->
+                        setHumanTimeout((->
                             sell(id, nListings-1, price, quantity)
                         ), LOADING_WAIT)
                     ), LOADING_WAIT)
