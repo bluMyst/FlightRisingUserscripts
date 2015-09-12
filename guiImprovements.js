@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.2
+// @version      1.22.3
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -193,269 +193,265 @@ if (urlMatches(new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i'))) {
 }
 
 if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'))) {
-  if (!findMatches('input[value=Search]', 0, 1).length) {
-    return;
-  }
-  AuctionListing = (function() {
-    function AuctionListing(element) {
-      this.element = element;
-      this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
-      this.button = this.element.find('[id*=buy_button]');
-      this.price = safeParseInt(this.button.text());
-      this.priceEA = this.price / this.numberOfItems;
-      this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
-      this.name = this.nameElement.text();
-    }
+  if (findMatches('input[value=Search]', 0, 1).length) {
+    AuctionListing = (function() {
+      function AuctionListing(element) {
+        this.element = element;
+        this.numberOfItems = safeParseInt(this.element.find('div:nth-child(1) > span:nth-child(1) > span').text());
+        this.button = this.element.find('[id*=buy_button]');
+        this.price = safeParseInt(this.button.text());
+        this.priceEA = this.price / this.numberOfItems;
+        this.nameElement = this.element.find('div:nth-child(1) > span:nth-child(2) > span:nth-child(1)');
+        this.name = this.nameElement.text();
+      }
 
-    AuctionListing.prototype.modifyElement = function() {
-      var priceEAString, priceString, target;
-      target = this.button[0].childNodes[2];
-      if (target == null) {
-        console.warn("Tried to modifyElement() for " + this.name + " @ " + this.price + " but the auction expired(?).");
-        return;
-      }
-      if (!safeParseInt(target.textContent) === this.price) {
-        throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
-      }
-      priceString = numberWithCommas(this.price);
-      priceEAString = numberWithCommas(Math.round(this.priceEA));
-      if (this.numberOfItems > 1) {
-        target.textContent = " " + priceString + " (" + priceEAString + " ea)";
+      AuctionListing.prototype.modifyElement = function() {
+        var priceEAString, priceString, target;
+        target = this.button[0].childNodes[2];
+        if (target == null) {
+          console.warn("Tried to modifyElement() for " + this.name + " @ " + this.price + " but the auction expired(?).");
+          return;
+        }
+        if (!safeParseInt(target.textContent) === this.price) {
+          throw new Error("Tried to modify an auction house item but the price didn't match expectations.");
+        }
+        priceString = numberWithCommas(this.price);
+        priceEAString = numberWithCommas(Math.round(this.priceEA));
+        if (this.numberOfItems > 1) {
+          target.textContent = " " + priceString + " (" + priceEAString + " ea)";
+        } else {
+          target.textContent = " " + priceString;
+        }
+        this.button.css('width', AH_BUTTON_SPACING);
+        return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
+      };
+
+      return AuctionListing;
+
+    })();
+    getTab = function() {
+      var ref1, tab;
+      if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
+        tab = tab[1];
       } else {
-        target.textContent = " " + priceString;
+        tab = 'food';
       }
-      this.button.css('width', AH_BUTTON_SPACING);
-      return this.nameElement.html("<a href='javascript:$(\"input[name=name]\").val(\"" + this.name + "\")'>" + this.name + "</a>");
+      if ((ref1 = !tab) === 'food' || ref1 === 'mats' || ref1 === 'app' || ref1 === 'dragons' || ref1 === 'fam' || ref1 === 'battle' || ref1 === 'skins' || ref1 === 'other') {
+        throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
+      }
+      return tab;
     };
+    CurrencyFields = (function() {
+      function CurrencyFields(img, low, high) {
+        this.img = img;
+        this.low = low;
+        this.high = high;
+      }
 
-    return AuctionListing;
+      CurrencyFields.prototype.notEmpty = function() {
+        var val;
+        val = this.low.val().length || this.high.val().length;
+        return val;
+      };
 
-  })();
-  getTab = function() {
-    var ref1, tab;
-    if ((tab = /[?&]tab=([^&]+)/.exec(window.location.href)) != null) {
-      tab = tab[1];
-    } else {
-      tab = 'food';
-    }
-    if ((ref1 = !tab) === 'food' || ref1 === 'mats' || ref1 === 'app' || ref1 === 'dragons' || ref1 === 'fam' || ref1 === 'battle' || ref1 === 'skins' || ref1 === 'other') {
-      throw new Error("Detected tab as invalid option " + (postData.tab.toString()) + ".");
-    }
-    return tab;
-  };
-  CurrencyFields = (function() {
-    function CurrencyFields(img, low, high) {
-      this.img = img;
-      this.low = low;
-      this.high = high;
-    }
+      return CurrencyFields;
 
-    CurrencyFields.prototype.notEmpty = function() {
-      var val;
-      val = this.low.val().length || this.high.val().length;
-      return val;
-    };
+    })();
+    CurrencyFilterer = (function() {
+      CurrencyFilterer.prototype.LOW = '0';
 
-    return CurrencyFields;
+      CurrencyFilterer.prototype.HIGH = '999999999999999999';
 
-  })();
-  CurrencyFilterer = (function() {
-    CurrencyFilterer.prototype.LOW = '0';
+      function CurrencyFilterer(searchButton, treasureFields, gemFields) {
+        this.searchButton = searchButton;
+        this.treasureFields = treasureFields;
+        this.gemFields = gemFields;
+        this.treasureListener = this.makeListener(this.treasureFields, this.gemFields);
+        this.gemListener = this.makeListener(this.gemFields, this.treasureFields);
+      }
 
-    CurrencyFilterer.prototype.HIGH = '999999999999999999';
+      CurrencyFilterer.prototype.makeListener = function(us, them) {
+        return (function(_this) {
+          return function(event) {
+            if (us.notEmpty()) {
+              us.low.val('');
+              us.high.val('');
+            } else {
+              us.low.val(_this.LOW);
+              us.high.val(_this.HIGH);
+            }
+            them.low.val('');
+            return them.high.val('');
+          };
+        })(this);
+      };
 
-    function CurrencyFilterer(searchButton, treasureFields, gemFields) {
-      this.searchButton = searchButton;
-      this.treasureFields = treasureFields;
-      this.gemFields = gemFields;
-      this.treasureListener = this.makeListener(this.treasureFields, this.gemFields);
-      this.gemListener = this.makeListener(this.gemFields, this.treasureFields);
-    }
+      CurrencyFilterer.prototype.init = function() {
+        this.treasureFields.img.click(this.treasureListener);
+        this.gemFields.img.click(this.gemListener);
+        this.treasureFields.img.css('cursor', 'pointer');
+        this.gemFields.img.css('cursor', 'pointer');
+        if (AH_DEFAULT_CURRENCY != null) {
+          return filterer.showOnly(AH_DEFAULT_CURRENCY);
+        }
+      };
 
-    CurrencyFilterer.prototype.makeListener = function(us, them) {
-      return (function(_this) {
-        return function(event) {
-          if (us.notEmpty()) {
-            us.low.val('');
-            us.high.val('');
-          } else {
-            us.low.val(_this.LOW);
-            us.high.val(_this.HIGH);
+      CurrencyFilterer.prototype.showOnly = function(currency) {
+        switch (currency) {
+          case TREASURE:
+            this.treasureListener();
+            break;
+          case GEMS:
+            this.gemListener();
+            break;
+          default:
+            throw new Error("CurrencyFilterer.showOnly called with invalid currency: " + currency);
+        }
+        return this.searchButton.click();
+      };
+
+      return CurrencyFilterer;
+
+    })();
+    filterer = new CurrencyFilterer(findMatches('input[value=Search]', 1, 1).click(), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1), findMatches('input[name=tl]', 1, 1), findMatches('input[name=th]', 1, 1)), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1), findMatches('input[name=gl]', 1, 1), findMatches('input[name=gh]', 1, 1)));
+    filterer.init();
+    if (getTab() !== 'dragons') {
+      itemNameText = $('#searching > div:nth-child(1)');
+      itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
+      updateListings = function() {
+        var i, k, len1, listings, results;
+        listings = (function() {
+          var k, len1, ref1, results;
+          ref1 = $('#ah_left div[id*=sale]');
+          results = [];
+          for (k = 0, len1 = ref1.length; k < len1; k++) {
+            i = ref1[k];
+            results.push(new AuctionListing($(i)));
           }
-          them.low.val('');
-          return them.high.val('');
-        };
-      })(this);
-    };
-
-    CurrencyFilterer.prototype.init = function() {
-      this.treasureFields.img.click(this.treasureListener);
-      this.gemFields.img.click(this.gemListener);
-      this.treasureFields.img.css('cursor', 'pointer');
-      this.gemFields.img.css('cursor', 'pointer');
-      if (AH_DEFAULT_CURRENCY != null) {
-        return filterer.showOnly(AH_DEFAULT_CURRENCY);
-      }
-    };
-
-    CurrencyFilterer.prototype.showOnly = function(currency) {
-      switch (currency) {
-        case TREASURE:
-          this.treasureListener();
-          break;
-        case GEMS:
-          this.gemListener();
-          break;
-        default:
-          throw new Error("CurrencyFilterer.showOnly called with invalid currency: " + currency);
-      }
-      return this.searchButton.click();
-    };
-
-    return CurrencyFilterer;
-
-  })();
-  filterer = new CurrencyFilterer(findMatches('input[value=Search]', 1, 1).click(), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_treasure.png"]', 1, 1), findMatches('input[name=tl]', 1, 1), findMatches('input[name=th]', 1, 1)), new CurrencyFields(findMatches('#searching img[src="/images/layout/icon_gems.png"]', 1, 1), findMatches('input[name=gl]', 1, 1), findMatches('input[name=gh]', 1, 1)));
-  filterer.init();
-  if (getTab() !== 'dragons') {
-    itemNameText = $('#searching > div:nth-child(1)');
-    itemNameText.html(itemNameText.html() + '<a href=\'javascript:$("input[name=name").val("")\'>\n    &nbsp;(clear)\n</a>');
-    updateListings = function() {
-      var i, k, len1, listings, results;
-      listings = (function() {
-        var k, len1, ref1, results;
-        ref1 = $('#ah_left div[id*=sale]');
+          return results;
+        })();
         results = [];
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          i = ref1[k];
-          results.push(new AuctionListing($(i)));
+        for (k = 0, len1 = listings.length; k < len1; k++) {
+          i = listings[k];
+          results.push(i.modifyElement());
         }
         return results;
-      })();
-      results = [];
-      for (k = 0, len1 = listings.length; k < len1; k++) {
-        i = listings[k];
-        results.push(i.modifyElement());
-      }
-      return results;
-    };
-    updateListings();
-    form = new FormData(findMatches('form#searching', 1, 1));
-    browseAllBackup = window.browseAll = function() {
-      var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, ref2, th, thl, tl, tll;
-      args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
-      console.log('browseAll called with', args);
-      postData = {};
-      postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
-      if (postData.page == null) {
-        postData.page = 1;
+      };
+      updateListings();
+      form = new FormData(findMatches('form#searching', 1, 1));
+      browseAllBackup = window.browseAll = function() {
+        var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, ref2, th, thl, tl, tll;
+        args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
+        console.log('browseAll called with', args);
+        postData = {};
+        postData.tab = args[0], postData.page = args[1], k = args.length - 2, postData.ordering = args[k++], postData.direct = args[k++];
+        if (postData.page == null) {
+          postData.page = 1;
 
-        /*
-        m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1)
-        
-        if m.length
-            postData.page = m.text()
-        else
-            console.log 'No page element found, assuming only 1 page.'
-            postData.page = '1'
-         */
-      }
-      if (postData.tab == null) {
-        postData.tab = getTab();
-      }
-      if (postData.ordering == null) {
-        if ($('img[src*="button_expiration_active.png"]').length) {
-          postData.ordering = 'expiration';
-        } else if ($('img[src*="button_price_active.png"]').length) {
-          postData.ordering = 'cost';
-        } else {
-          throw new Error("Couldn't detect ordering (expiration or price).");
+          /*
+          m = findMatches('#ah_left > div:nth-child(3) > span', 0, 1)
+          
+          if m.length
+              postData.page = m.text()
+          else
+              console.log 'No page element found, assuming only 1 page.'
+              postData.page = '1'
+           */
         }
-      }
-      if (postData.direct == null) {
-        if ($('img[src*="button_ascending_active.png"]').length) {
-          postData.direct = 'ASC';
-        } else if ($('img[src*="button_descending_active.png"]').length) {
-          postData.direct = 'DESC';
-        } else {
-          throw new Error("Couldn't detect sorting direction.");
+        if (postData.tab == null) {
+          postData.tab = getTab();
         }
-      }
-      if ((cat = form.field('cat')).length) {
-        postData.cat = cat;
-      }
-      if ((name = form.field('name')).length) {
-        postData.name = name;
-      }
-      tl = form.field('tl');
-      th = form.field('th');
-      gl = form.field('gl');
-      gh = form.field('gh');
-      ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
-      filledFields = 0;
-      ref2 = [tll, thl, gll, ghl];
-      for (l = 0, len1 = ref2.length; l < len1; l++) {
-        i = ref2[l];
-        if (i) {
-          filledFields += 1;
+        if (postData.ordering == null) {
+          if ($('img[src*="button_expiration_active.png"]').length) {
+            postData.ordering = 'expiration';
+          } else if ($('img[src*="button_price_active.png"]').length) {
+            postData.ordering = 'cost';
+          } else {
+            throw new Error("Couldn't detect ordering (expiration or price).");
+          }
         }
-      }
-      if (tll || thl) {
-        if (tll) {
-          postData.tl = tl;
+        if (postData.direct == null) {
+          if ($('img[src*="button_ascending_active.png"]').length) {
+            postData.direct = 'ASC';
+          } else if ($('img[src*="button_descending_active.png"]').length) {
+            postData.direct = 'DESC';
+          } else {
+            throw new Error("Couldn't detect sorting direction.");
+          }
         }
-        if (thl) {
-          postData.th = th;
+        if ((cat = form.field('cat')).length) {
+          postData.cat = cat;
         }
-      } else if (gll || ghl) {
-        if (gll) {
-          postData.gl = gl;
+        if ((name = form.field('name')).length) {
+          postData.name = name;
         }
-        if (ghl) {
-          postData.gh = gh;
+        tl = form.field('tl');
+        th = form.field('th');
+        gl = form.field('gl');
+        gh = form.field('gh');
+        ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
+        filledFields = 0;
+        ref2 = [tll, thl, gll, ghl];
+        for (l = 0, len1 = ref2.length; l < len1; l++) {
+          i = ref2[l];
+          if (i) {
+            filledFields += 1;
+          }
         }
-      }
-      console.log('Posting', postData);
-      return $.ajax({
-        type: "POST",
-        data: postData,
-        url: "includes/ah_buy_" + postData.tab + ".php",
-        cache: false
-      }).done(function(stuff) {
-        findMatches("#ah_left", 1, 1).html(stuff);
-        return setTimeout((function() {
-          window.browseAll = browseAllBackup;
-          return updateListings();
-        }), 100);
+        if (tll || thl) {
+          if (tll) {
+            postData.tl = tl;
+          }
+          if (thl) {
+            postData.th = th;
+          }
+        } else if (gll || ghl) {
+          if (gll) {
+            postData.gl = gl;
+          }
+          if (ghl) {
+            postData.gh = gh;
+          }
+        }
+        console.log('Posting', postData);
+        return $.ajax({
+          type: "POST",
+          data: postData,
+          url: "includes/ah_buy_" + postData.tab + ".php",
+          cache: false
+        }).done(function(stuff) {
+          findMatches("#ah_left", 1, 1).html(stuff);
+          return setTimeout((function() {
+            window.browseAll = browseAllBackup;
+            return updateListings();
+          }), 100);
+        });
+      };
+      button = findMatches('input#go', 1, 1);
+      button.attr('type', 'button');
+      button.click(function() {
+        return browseAllBackup();
       });
-    };
-    button = findMatches('input#go', 1, 1);
-    button.attr('type', 'button');
-    button.click(function() {
-      return browseAllBackup();
-    });
-    setTimeout((function() {
-      return browseAllBackup();
-    }), 400);
-    findMatches('form#searching input[type=text]').keydown(function(e) {
-      if (e.keyCode === 13) {
-        return button.click();
-      }
-    });
-    buttonTitle = 'Tells the userscript to update formatting (show price ea and other information)\non this page, since the code for doing that automatically has a tendency to\nforget.';
-    updateButton = $("<input type=button value=\"Update formatting\" title=\"" + buttonTitle + "\" class=mb_button>");
-    updateButton.click(function() {
-      window.browseAll = window.browseAllBackup = browseAllBackup;
-      return updateListings();
-    });
-    findMatches('#go', 1, 1).after(updateButton);
+      setTimeout((function() {
+        return browseAllBackup();
+      }), 400);
+      findMatches('form#searching input[type=text]').keydown(function(e) {
+        if (e.keyCode === 13) {
+          return button.click();
+        }
+      });
+      buttonTitle = 'Tells the userscript to update formatting (show price ea and other information)\non this page, since the code for doing that automatically has a tendency to\nforget.';
+      updateButton = $("<input type=button value=\"Update formatting\" title=\"" + buttonTitle + "\" class=mb_button>");
+      updateButton.click(function() {
+        window.browseAll = window.browseAllBackup = browseAllBackup;
+        return updateListings();
+      });
+      findMatches('#go', 1, 1).after(updateButton);
+    }
   }
 }
 
-console.log('outside auction house sell');
-
 if (urlMatches(new RegExp('flightrising\.com/main\.php.*action=sell', 'i'))) {
-  console.log('auction house sell');
   sell = window.sell = function(id, nListings, price, quantity) {
     var itemInList;
     if (quantity == null) {
