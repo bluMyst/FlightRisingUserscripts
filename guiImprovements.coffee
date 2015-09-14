@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.3
+// @version      1.22.4
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -466,12 +466,13 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
                     else
                         throw new Error "Couldn't detect sorting direction."
 
-                if (cat = form.field 'cat').length
+                if (cat = form.field 'cat')
                     postData.cat = cat
 
-                if (name = form.field 'name').length
+                if (name = form.field 'name')
                     postData.name = name
 
+                #TODO: Don't assume there's a tl, th, etc.
                 tl = form.field 'tl'
                 th = form.field 'th'
                 gl = form.field 'gl'
