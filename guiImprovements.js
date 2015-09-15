@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.4
+// @version      1.22.5
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -340,7 +340,7 @@ if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'))) {
       updateListings();
       form = new FormData(findMatches('form#searching', 1, 1));
       browseAllBackup = window.browseAll = function() {
-        var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, ref2, th, thl, tl, tll;
+        var args, cat, filledFields, gh, ghl, gl, gll, i, k, l, len1, name, postData, ref1, th, thl, tl, tll;
         args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
         console.log('browseAll called with', args);
         postData = {};
@@ -389,11 +389,14 @@ if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i'))) {
         th = form.field('th');
         gl = form.field('gl');
         gh = form.field('gh');
-        ref1 = [tl.length, th.length, gl.length, gh.length], tll = ref1[0], thl = ref1[1], gll = ref1[2], ghl = ref1[3];
+        tll = tl ? tl.length : 0;
+        thl = th ? th.length : 0;
+        gll = gl ? gl.length : 0;
+        ghl = gh ? gh.length : 0;
         filledFields = 0;
-        ref2 = [tll, thl, gll, ghl];
-        for (l = 0, len1 = ref2.length; l < len1; l++) {
-          i = ref2[l];
+        ref1 = [tll, thl, gll, ghl];
+        for (l = 0, len1 = ref1.length; l < len1; l++) {
+          i = ref1[l];
           if (i) {
             filledFields += 1;
           }

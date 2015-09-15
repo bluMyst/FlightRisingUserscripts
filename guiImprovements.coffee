@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.4
+// @version      1.22.5
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -343,7 +343,6 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
                     us.low.val  @LOW
                     us.high.val @HIGH
 
-                # TODO: Is it faster to do this always or to check if .notEmpty() first?
                 them.low.val  ''
                 them.high.val ''
 
@@ -472,13 +471,16 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
                 if (name = form.field 'name')
                     postData.name = name
 
-                #TODO: Don't assume there's a tl, th, etc.
                 tl = form.field 'tl'
                 th = form.field 'th'
                 gl = form.field 'gl'
                 gh = form.field 'gh'
 
-                [tll, thl, gll, ghl] = [tl.length, th.length, gl.length, gh.length]
+                tll = if tl then tl.length else 0
+                thl = if th then th.length else 0
+                gll = if gl then gl.length else 0
+                ghl = if gh then gh.length else 0
+
                 filledFields = 0
 
                 for i in [tll, thl, gll, ghl]
@@ -557,7 +559,6 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
 
 # Auction House Sell {{{2
 if urlMatches new RegExp('flightrising\.com/main\.php.*action=sell', 'i')
-    # TODO: Still won't work. O_o
     sell = window.sell = (id, nListings, price, quantity=1) ->
         if nListings <= 0 then return
 
