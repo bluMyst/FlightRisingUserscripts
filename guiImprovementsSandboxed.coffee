@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements Sandboxed Portion
 // @description  Runs potentially unsafe code in a protective sandbox.
 // @namespace    ahto
-// @version      1.1.1
+// @version      1.1.2
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        GM_addStyle
@@ -31,9 +31,15 @@ if new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test document.locatio
         else
             tr.removeClass 'selected-tr'
 
-    findMatches('#ajaxbody tr input[type=checkbox]').click (event) ->
-        updateCheckbox $ event.target
+    addCheckboxListeners = ->
+        findMatches('#ajaxbody tr input[type=checkbox]').click (event) ->
+            updateCheckbox $ event.target
+
+    addCheckboxListeners()
 
     findMatches('input#set', 1, 1).click (event) ->
-        for i in findMatches('#ajaxbody tr input[type=checkbox]')
+        for i in findMatches '#ajaxbody tr input[type=checkbox]'
             updateCheckbox $ i
+
+    findMatches('img#prev, img#next, button#delete-confirm-yes', 0, 3).click (event) ->
+        setTimeout((-> addCheckboxListeners()), 500)

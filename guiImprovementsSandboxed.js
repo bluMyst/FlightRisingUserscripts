@@ -5,13 +5,13 @@
 // @name         FlightRising GUI Improvements Sandboxed Portion
 // @description  Runs potentially unsafe code in a protective sandbox.
 // @namespace    ahto
-// @version      1.1.1
+// @version      1.1.2
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        GM_addStyle
 // ==/UserScript==
  */
-var updateCheckbox;
+var addCheckboxListeners, updateCheckbox;
 
 if (new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test(document.location.href)) {
   GM_addStyle('#ajaxbody tr.highlight-tr.selected-tr {\n    background-color: #CAA;\n}\n\n#ajaxbody tr.selected-tr {\n    background-color: #CBB;\n}');
@@ -24,9 +24,12 @@ if (new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test(document.locati
       return tr.removeClass('selected-tr');
     }
   };
-  findMatches('#ajaxbody tr input[type=checkbox]').click(function(event) {
-    return updateCheckbox($(event.target));
-  });
+  addCheckboxListeners = function() {
+    return findMatches('#ajaxbody tr input[type=checkbox]').click(function(event) {
+      return updateCheckbox($(event.target));
+    });
+  };
+  addCheckboxListeners();
   findMatches('input#set', 1, 1).click(function(event) {
     var i, j, len, ref, results;
     ref = findMatches('#ajaxbody tr input[type=checkbox]');
@@ -36,5 +39,10 @@ if (new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test(document.locati
       results.push(updateCheckbox($(i)));
     }
     return results;
+  });
+  findMatches('img#prev, img#next, button#delete-confirm-yes', 0, 3).click(function(event) {
+    return setTimeout((function() {
+      return addCheckboxListeners();
+    }), 500);
   });
 }
