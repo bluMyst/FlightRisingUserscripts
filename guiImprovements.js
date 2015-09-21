@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.23.0
+// @version      1.23.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -514,7 +514,7 @@ if (urlMatches(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'))) {
 if (new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test(document.location.href)) {
   autoCollectAll = window.autoCollectAll = function() {
     var i, k, len1, links, ref1, results;
-    links = $('img[src$="attachment.png"]').parents('tr').find('a[href*="msgs"]');
+    links = $('img[src$="attachment.png"], img[src$="icon_treasure.png"]').parents('tr').find('a[href*="msgs"]');
     ref1 = (function() {
       var l, len1, results1;
       results1 = [];

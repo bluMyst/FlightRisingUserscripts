@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.23.0
+// @version      1.23.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -624,7 +624,8 @@ if urlMatches new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i')
 # Messages list (auto-collect all) {{{2
 if new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test document.location.href
     autoCollectAll = window.autoCollectAll = ->
-        links = $('img[src$="attachment.png"]').parents('tr').find('a[href*="msgs"]')
+        # TODO This also detects the icon_treasure.png at the top of the page.
+        links = $('img[src$="attachment.png"], img[src$="icon_treasure.png"]').parents('tr').find('a[href*="msgs"]')
 
         for i in ($ i for i in links)
             window.open i.attr 'href'
