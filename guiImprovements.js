@@ -5,7 +5,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.5
+// @version      1.23.1
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -37,7 +37,7 @@ Mail:
 - Auto-collects attachments.
 - Selecting a message for deletion highlights the whole thing.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CurrencyFields, CurrencyFilterer, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, blinker, bondButton, brew, browseAllBackup, bubble, button, buttonHi, buttonLo, buttonTitle, currentTreasure, exit, filterer, form, getTab, guesses, injectScript, instruct, itemNameText, j, len, newHTML, playAgain, price, ref, sell, setHumanTimeout, treasureIndicator, updateButton, updateListings, urlMatches,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CurrencyFields, CurrencyFilterer, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, autoCollectAll, blinker, bondButton, browseAllBackup, bubble, button, buttonHi, buttonLo, buttonTitle, currentTreasure, exit, filterer, form, getTab, guesses, info, injectScript, instruct, itemNameText, j, len, newHTML, playAgain, price, ref, sell, setHumanTimeout, treasureIndicator, updateButton, updateListings, urlMatches,
   slice = [].slice;
 
 TREASURE = 0;
@@ -135,37 +135,20 @@ if (urlMatches(new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i
       return document.title = 'Ready!';
     };
   }
-  if ((new RegExp('/baldwin/create')).test(window.location.href)) {
+  if (urlMatches(new RegExp('/baldwin/create', 'i'))) {
     bubble = findMatches('.baldwin-create-speech-bubble', 1, 1);
     instruct = findMatches('.baldwin-create-instruct', 1, 1);
     bubble.css('padding', '5px').css('right', 'inherit');
     instruct.css('background', 'inherit');
     bubble.html(BBB_GUIDE);
   }
-  brew = window.brew = function(id, n) {
-    if (n == null) {
-      n = 1;
-    }
-    if (n <= 0) {
-      return;
-    }
-    $('#baldwin-transmute-btn').click();
-    return setTimeout((function() {
-      var itemInList;
-      itemInList = $("a[rel='#tooltip-" + id + "']");
-      itemInList = $(itemInList[itemInList.length - 1]);
-      itemInList.click();
-      return setTimeout((function() {
-        $('#attch').click();
-        return setTimeout((function() {
-          $('#transmute-confirm-ok').click();
-          return setTimeout((function() {
-            return brew(id, n - 1);
-          }), LOADING_WAIT);
-        }), LOADING_WAIT);
-      }), LOADING_WAIT);
-    }), LOADING_WAIT);
-  };
+  if (urlMatches(new RegExp('/baldwin/transmute', 'i'))) {
+    info = findMatches('.baldwin-cauldron-status', 1, 1);
+    bubble = findMatches('#speech-bubble-content', 1, 1);
+    bubble.contents().remove();
+    bubble.html(BBB_GUIDE);
+    bubble.append(info);
+  }
 }
 
 if (urlMatches(new RegExp('http://flightrising\.com/main\.php.*p=market', 'i'))) {
@@ -525,5 +508,31 @@ if (urlMatches(new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i'))) {
       findMatches('button#confirm', 1, 1).click();
       return document.title = 'Collected!';
     });
+  });
+}
+
+if (new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test(document.location.href)) {
+  autoCollectAll = window.autoCollectAll = function() {
+    var i, k, len1, links, ref1, results;
+    links = $('img[src$="attachment.png"], img[src$="icon_treasure.png"]').parents('tr').find('a[href*="msgs"]');
+    ref1 = (function() {
+      var l, len1, results1;
+      results1 = [];
+      for (l = 0, len1 = links.length; l < len1; l++) {
+        i = links[l];
+        results1.push($(i));
+      }
+      return results1;
+    })();
+    results = [];
+    for (k = 0, len1 = ref1.length; k < len1; k++) {
+      i = ref1[k];
+      results.push(window.open(i.attr('href')));
+    }
+    return results;
+  };
+  $('#ajaxbody').append("<input type=button class=\"beigebutton thingbutton\" id=autoCollectButton value=\"Auto-collect all.\">");
+  $('#autoCollectButton').click(function() {
+    return autoCollectAll();
   });
 }
