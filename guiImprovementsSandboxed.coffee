@@ -62,7 +62,7 @@ if urlMatches new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'
         console.log '----------'
 
     brew = (id, n=1) ->
-        if n <= 0 then
+        if n <= 0
             GM_setValue 'brew_id'
             GM_setValue 'brew_n'
             logBrewValues 'reset after n=0'
@@ -92,10 +92,11 @@ if urlMatches new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'
         brew(brew_id, brew_n)
     else
         $('#baldwin-transmute-btn').click ->
-            # TODO get dropdown
+            setTimeout_ LOADING_WAIT, ->
+                dropdown = $ '#quantity'
 
-            for i in [2..99]
-                dropdown.append "<option value='1'>#{i}</option>"
+                for i in [2..99]
+                    dropdown.append "<option value='1'>#{i}</option>"
 
         $('#attch').click ->
             # TODO get dropdown again
