@@ -4,9 +4,9 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.23.1
+// @version      1.23.2
 // @include      http://*flightrising.com/*
-// @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
+// @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=75750
 // @grant        none
 // ==/UserScript==
 ###
@@ -94,40 +94,13 @@ BBB_BLINK_TIMEOUT = 500
 LOADING_WAIT = 1000
 
 # Functions and classes {{{1
-exit = -> # {{{2
-    throw new Error 'Not an error just exiting early'
-
 setHumanTimeout = (f, extraTime=0) -> # {{{2
-    return setTimeout(
-        f,
-        randInt(
-            HUMAN_TIMEOUT_MIN + extraTime,
-            HUMAN_TIMEOUT_MAX + extraTime,
-        ),
+    wait_time = randInt(
+        HUMAN_TIMEOUT_MIN + extraTime,
+        HUMAN_TIMEOUT_MAX + extraTime,
     )
 
-injectScript = (f) -> # {{{2
-    # Injects a script to run in the window's namespace.
-    if typeof f == 'function'
-        # Surround the function in parentheses and call it with no arguments.
-        # Otherwise it'll just sit there, like this:
-        # (foo) -> foo(13)
-        # Instead of this:
-        # ( (foo) -> foo(13) )()
-        source = "(#{f})();"
-
-    script = $("""
-        <script type='application/javascript'>
-            #{source}
-        </script>
-    """)
-
-    # append script and immediately remove it to clean up
-    $(document).append script
-    script.remove()
-
-urlMatches = (regexp) -> # {{{2
-    return regexp.test window.location.href
+    return setTimeout_(wait_time, f)
 
 class FormData # {{{2
     constructor: (@form) ->
@@ -208,11 +181,15 @@ if urlMatches new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'
 
     # Transmute tab {{{3
     if urlMatches new RegExp('/baldwin/transmute', 'i')
-        info   = findMatches '.baldwin-cauldron-status', 1, 1
-        bubble = findMatches('#speech-bubble-content', 1, 1)
-        bubble.contents().remove()
-        bubble.html BBB_GUIDE
-        bubble.append(info)
+        info = findMatches('.baldwin-cauldron-status', 0, 1)
+
+        # If there's nothing being transmuted, preserving the HTML causes the transmute button
+        # not to work for some reason, so if that's the case we'll just change nothing and move on.
+        if info.length
+            bubble = findMatches('#speech-bubble-content', 1, 1)
+            bubble.contents().remove()
+            bubble.html BBB_GUIDE
+            bubble.append(info)
 
 # Marketplace {{{2
 if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')
