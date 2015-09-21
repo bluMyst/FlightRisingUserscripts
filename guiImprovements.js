@@ -5,9 +5,9 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.23.1
+// @version      1.23.2
 // @include      http://*flightrising.com/*
-// @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
+// @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=75750
 // @grant        none
 // ==/UserScript==
  */
@@ -37,7 +37,7 @@ Mail:
 - Auto-collects attachments.
 - Selecting a message for deletion highlights the whole thing.
  */
-var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CurrencyFields, CurrencyFilterer, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, autoCollectAll, blinker, bondButton, browseAllBackup, bubble, button, buttonHi, buttonLo, buttonTitle, currentTreasure, exit, filterer, form, getTab, guesses, info, injectScript, instruct, itemNameText, j, len, newHTML, playAgain, price, ref, sell, setHumanTimeout, treasureIndicator, updateButton, updateListings, urlMatches,
+var AH_BUTTON_SPACING, AH_DEFAULT_CURRENCY, AH_UPDATE_DELAY, AuctionListing, BBB_BLINK_TIMEOUT, BBB_GUIDE, CurrencyFields, CurrencyFilterer, FormData, GEMS, HUMAN_TIMEOUT_MAX, HUMAN_TIMEOUT_MIN, LOADING_WAIT, TD_ATTR, TREASURE, autoCollectAll, blinker, bondButton, browseAllBackup, bubble, button, buttonHi, buttonLo, buttonTitle, currentTreasure, filterer, form, getTab, guesses, info, instruct, itemNameText, j, len, newHTML, playAgain, price, ref, sell, setHumanTimeout, treasureIndicator, updateButton, updateListings,
   slice = [].slice;
 
 TREASURE = 0;
@@ -62,29 +62,13 @@ BBB_BLINK_TIMEOUT = 500;
 
 LOADING_WAIT = 1000;
 
-exit = function() {
-  throw new Error('Not an error just exiting early');
-};
-
 setHumanTimeout = function(f, extraTime) {
+  var wait_time;
   if (extraTime == null) {
     extraTime = 0;
   }
-  return setTimeout(f, randInt(HUMAN_TIMEOUT_MIN + extraTime, HUMAN_TIMEOUT_MAX + extraTime));
-};
-
-injectScript = function(f) {
-  var script, source;
-  if (typeof f === 'function') {
-    source = "(" + f + ")();";
-  }
-  script = $("<script type='application/javascript'>\n    " + source + "\n</script>");
-  $(document).append(script);
-  return script.remove();
-};
-
-urlMatches = function(regexp) {
-  return regexp.test(window.location.href);
+  wait_time = randInt(HUMAN_TIMEOUT_MIN + extraTime, HUMAN_TIMEOUT_MAX + extraTime);
+  return setTimeout_(wait_time, f);
 };
 
 FormData = (function() {
@@ -143,11 +127,13 @@ if (urlMatches(new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i
     bubble.html(BBB_GUIDE);
   }
   if (urlMatches(new RegExp('/baldwin/transmute', 'i'))) {
-    info = findMatches('.baldwin-cauldron-status', 1, 1);
-    bubble = findMatches('#speech-bubble-content', 1, 1);
-    bubble.contents().remove();
-    bubble.html(BBB_GUIDE);
-    bubble.append(info);
+    info = findMatches('.baldwin-cauldron-status', 0, 1);
+    if (info.length) {
+      bubble = findMatches('#speech-bubble-content', 1, 1);
+      bubble.contents().remove();
+      bubble.html(BBB_GUIDE);
+      bubble.append(info);
+    }
   }
 }
 

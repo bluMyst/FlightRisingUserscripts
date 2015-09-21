@@ -59,3 +59,34 @@ numberWithCommas = (n) -> # {{{1
         ///g,
         ",",
     )
+
+
+exit = -> # {{{1
+    throw new Error 'Not an error just exiting early'
+
+setTimeout_ = (wait, f) -> # {{{1
+    return setTimeout(f, wait)
+
+injectScript = (f) -> # {{{1
+    # Injects a script to run in the window's namespace.
+    if typeof f == 'function'
+        # Surround the function in parentheses and call it with no arguments.
+        # Otherwise it'll just sit there, like this:
+        # (foo) -> foo(13)
+        # Instead of this:
+        # ( (foo) -> foo(13) )()
+        source = "(#{f})();"
+
+    script = $("""
+        <script type='application/javascript'>
+            #{source}
+        </script>
+    """)
+
+    # append script and immediately remove it to clean up
+    $(document).append script
+    script.remove()
+
+urlMatches = (regexp) -> # {{{1
+    return regexp.test window.location.href
+
