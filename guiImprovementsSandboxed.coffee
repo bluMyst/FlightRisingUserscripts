@@ -6,7 +6,7 @@
 // @namespace    ahto
 // @version      1.1.2
 // @include      http://*flightrising.com/*
-// @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
+// @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=75750
 // @grant        GM_addStyle
 // ==/UserScript==
 ###
