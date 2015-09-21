@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.22.5
+// @version      1.23.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=61626
 // @grant        none
@@ -197,13 +197,22 @@ if urlMatches new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i'
             clearInterval blinker
             document.title = 'Ready!'
 
-    if (new RegExp('/baldwin/create')).test(window.location.href)
+    # Create tab {{{3
+    if urlMatches new RegExp('/baldwin/create', 'i')
         bubble   = findMatches('.baldwin-create-speech-bubble', 1, 1)
         instruct = findMatches('.baldwin-create-instruct', 1, 1)
 
         bubble.css('padding', '5px').css('right', 'inherit')
         instruct.css('background', 'inherit')
         bubble.html BBB_GUIDE
+
+    # Transmute tab {{{3
+    if urlMatches new RegExp('/baldwin/transmute', 'i')
+        info   = findMatches '.baldwin-cauldron-status', 1, 1
+        bubble = findMatches('#speech-bubble-content', 1, 1)
+        bubble.contents().remove()
+        bubble.html BBB_GUIDE
+        bubble.append(info)
 
 # Marketplace {{{2
 if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=market', 'i')
@@ -611,3 +620,17 @@ if urlMatches new RegExp('http://www1\.flightrising\.com/msgs/[0-9]+', 'i')
         setHumanTimeout ->
             findMatches('button#confirm', 1, 1).click()
             document.title = 'Collected!'
+
+# Messages list (auto-collect all) {{{2
+if new RegExp('http://www1\.flightrising\.com/msgs$', 'i').test document.location.href
+    autoCollectAll = window.autoCollectAll = ->
+        links = $('img[src$="attachment.png"]').parents('tr').find('a[href*="msgs"]')
+
+        for i in ($ i for i in links)
+            window.open i.attr 'href'
+
+    $('#ajaxbody').append """
+        <input type=button class="beigebutton thingbutton" id=autoCollectButton value="Auto-collect all.">
+    """
+
+    $('#autoCollectButton').click -> autoCollectAll()
