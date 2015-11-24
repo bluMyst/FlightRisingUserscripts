@@ -4,7 +4,7 @@
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.23.2
+// @version      1.24.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=75750
 // @grant        none
@@ -102,6 +102,24 @@ setHumanTimeout = (f, extraTime=0) -> # {{{2
 
     return setTimeout_(wait_time, f)
 
+getItemTooltip = (id, tab, callback) ->
+    $.get('/includes/itemajax.php', {id:id, food:food}).done callback
+
+getItemDetails = (id, tab, callback) ->
+    getItemTooltip id, tab, (results) ->
+        # TODO: Add rarity and description and category.
+        results        = $ results
+        nameStyle      = "color:#731d08; font-weight:bold; font-size:11px;"
+        foodPointStyle = "color:#000; font-size:10px; position:absolute; bottom:5px; right:5px; font-weight:bold;"
+        sellValueStyle = "color:#000; font-size:10px; position:absolute; bottom:5px; font-weight:bold;"
+
+        info =
+            name:       results.find("div[style='#{nameStyle     }']").text()
+            sellValue:  results.find("div[style='#{sellValueStyle}']").text()
+            foodPoints: if (r = results.find("div[style='#{foodPointStyle}']")).length then r.text()
+
+        callback info
+
 class FormData # {{{2
     constructor: (@form) ->
 
@@ -113,6 +131,63 @@ class FormData # {{{2
             return field.val(newValue)
         else
             return field.val()
+
+class AuctionSearch # {{{2
+    GET_NUMBER: /[0-9]+/
+
+    constructor: (@postData) ->
+        ###
+        # cat means category, tl means treasure low, gh means gems high. tab,
+        # page (but this is auto-sent), cat, tl, th, gl, gh, name, ordering,
+        # direct. Ordering can be 'expiration' or 'cost'. All values are
+        # strings. direct (direction) can be 'ASC' or 'DESC'. Valid categories
+        # are 'mats', 'app', 'dragons', 'fam', 'battle', 'skins', and 'other'.
+        ###
+        @sales = []
+
+        if      @postData.direct   not in ['ASC', 'DESC'] or
+                @postData.ordering not in ['expiration', 'cost'] or
+                @postData.cat not in [
+                    'mats', 'app', 'dragons', 'fam', 'battle', 'skins', 'other'
+                ]
+            throw new Error 'Invalid postData.'
+
+        $.post("includes/ah_buy_#{tab}.php", @postData).done (response) =>
+            # TODO: Get number of pages then addResponse for every one of them.
+            response = $ response
+            pageHolderStyle = "font-size:12px; text-align:center; position:absolute; bottom:5px; height:27px; width:480px;"
+            pages = parseInt response.find("div[style='#{pageHolderStyle}'] a[style='cursor:pointer;']:last").text()
+
+            @addResponse response
+            # TODO: Make a recursive function with setHumanTimeout delays to get all the results.
+            #for pageNum in [2..pages]
+
+    addResponse: (@response) ->
+        console.log 'setResponse called on', @response
+        getNumber = (string) -> parseInt GET_NUMBER.exec(string)[0]
+
+        sales = $ 'div[id^=sale]'
+
+        for sale in sales
+            saleInfo =
+                saleID:      getNumber sale.attr 'id'
+                itemID:      getNumber sale.find('img[src^="/images/cms/trinket/"').attr 'src'
+                quantity:    parseInt sale.find('span[style="position:absolute; bottom:0px; left:0px; background-color:#FFF; color:#731d08; font-size:11px; font-weight:bold; padding-right:2px; width:15px; height:10px; text-align:right;"]').text()
+                # expiration is the number of seconds since the unix epoch
+                expiration:  getNumber sale.find('span[time]').attr 'time'
+                price:       getNumber sale.find('div[id^=buy_button]').text()
+
+                currency: if sale.find('img[src$=icon_gems.png]').length
+                    GEMS
+                else if sale.find('img[src$=icon_treasure.png]').length
+                    TREASURE
+                else
+                    undefined
+
+            saleInfo.priceEA = saleInfo.price / saleInfo.quantity
+            sales.push saleInfo
+            console.log sale
+            console.log saleInfo
 
 # General improvements {{{1
 # pm = messages link
@@ -243,7 +318,10 @@ if urlMatches new RegExp("http://flightrising\.com/main\.php.*p=lair", 'i')
             setHumanTimeout ->
                 findMatches('button#no', 1, 1).click()
     else if findMatches('img[src*="button_bond_inactive.png"]', 0, 1).length
-        document.title = 'Bonded!'
+        if $('img[src*="bar_bond_max.png"]').length
+            document.title = 'Awakened!'
+        else
+            document.title = 'Bonded!'
 
 # Auction House Buy {{{2
 if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
@@ -402,9 +480,10 @@ if urlMatches new RegExp('http://flightrising\.com/main\.php.*p=ah', 'i')
                 console.log 'browseAll called with', args
                 # tl = treasure low  gh = gems high
                 # Arguments are:
-                # tab, page, [maybe cat], [lohi], [maybe name], ordering, direct
-                # lohi = [treasure lohi] or [gem lohi] or [nothing]
-                # X lohi = X hi or X lo or (X lo, X hi)
+                # tab, page, [maybe cat], <lohi>, [maybe name], ordering, direct
+                # lohi = <treasure lohi> or <gem lohi> or <nothing>
+                # treasure lohi = th, tl
+                # gem lohi = gh, gl
 
                 # Build postData {{{6
                 postData = {}
