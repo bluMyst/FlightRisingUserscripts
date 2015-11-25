@@ -1,0 +1,16 @@
+At least one of the fairgrounds games (tidal trouble), uses a socket.io websocket to communicate between client and server. On Wireshark, try the filter "ip.addr==207.58.158.212 && websocket". Also apparently there's something called 'masking' going on that's presumably end-to-end encryption.
+
+Here's a communication I just captured from a Tidal Trouble game:
+
+[C] = client
+[S] = server
+
+[S] 1::
+[S] 5:::{"name":"l20rj2f2f"}
+[C] 5:::{"name":"JMxc-w-wd2DQ","args":["yHbznfqlVHW+2y1Jnn/lqpMOWZXABYVmkbAbSCSzAmKc/X+uIU4gfeP/XzLFvmqBbT5AsL05/WCd289VT4Awww=="]}
+[S] 5:::{"name":"kccs-scZc","args":[{"amount":0,"highscores":[]}]}
+[S] 2::
+[C] 2::
+[etc...]
+
+Well I bet all the 2:: and 5::: and all that sorta stuff is from socket.io, and I bet socket.io sends everything in JSON format, which is why there're so many curly brackets. I also wonder if the 'name' thing is also from socket.io, because I really can't figure out what it is or what it means. If that were the case then 'args' would be the actual data, probably.
