@@ -1,10 +1,12 @@
 # vim: foldmethod=marker
+# TODO: Use MutationObservers!
+# https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
 ### UserScript options {{{1
 // ==UserScript==
 // @name         FlightRising GUI Improvements
 // @description  Improves the interface for Flight Rising.
 // @namespace    ahto
-// @version      1.24.0
+// @version      1.25.0
 // @include      http://*flightrising.com/*
 // @require      https://greasyfork.org/scripts/10922-ahto-library/code/Ahto%20Library.js?version=75750
 // @grant        none
@@ -95,28 +97,30 @@ LOADING_WAIT = 1000
 
 # Functions and classes {{{1
 setHumanTimeout = (f, extraTime=0) -> # {{{2
-    wait_time = randInt(
-        HUMAN_TIMEOUT_MIN + extraTime,
-        HUMAN_TIMEOUT_MAX + extraTime,
-    )
+    wait_time = randInt(HUMAN_TIMEOUT_MIN, HUMAN_TIMEOUT_MAX)
+    return setTimeout_(wait_time + extraTime, f)
 
-    return setTimeout_(wait_time, f)
-
-getItemTooltip = (id, tab, callback) ->
+getItemTooltip = (id, tab, callback) -> # {{{2
     $.get('/includes/itemajax.php', {id:id, food:food}).done callback
 
-getItemDetails = (id, tab, callback) ->
+getItemDetails = (id, tab, callback) -> # {{{2
     getItemTooltip id, tab, (results) ->
         # TODO: Add rarity and description and category.
-        results        = $ results
+        results        = $(results)
         nameStyle      = "color:#731d08; font-weight:bold; font-size:11px;"
-        foodPointStyle = "color:#000; font-size:10px; position:absolute; bottom:5px; right:5px; font-weight:bold;"
-        sellValueStyle = "color:#000; font-size:10px; position:absolute; bottom:5px; font-weight:bold;"
+        foodPointStyle = "color:#000; font-size:10px; position:absolute;
+                          bottom:5px; right:5px; font-weight:bold;"
+        sellValueStyle = "color:#000; font-size:10px; position:absolute;
+                          bottom:5px; font-weight:bold;"
 
         info =
             name:       results.find("div[style='#{nameStyle     }']").text()
             sellValue:  results.find("div[style='#{sellValueStyle}']").text()
-            foodPoints: if (r = results.find("div[style='#{foodPointStyle}']")).length then r.text()
+            foodPoints: null # sometimes placeholder; see below
+
+        foodPoints = results.find("div[style='#{foodPointStyle}']")
+        if foodPoints.length
+            info.foodPoints = foodPoints.text()
 
         callback info
 
@@ -127,7 +131,7 @@ class FormData # {{{2
         # pass no newValue to get current value.
         field = @form.find "[name=#{name}]"
 
-        if newValue
+        if newValue?
             return field.val(newValue)
         else
             return field.val()
@@ -137,26 +141,42 @@ class AuctionSearch # {{{2
 
     constructor: (@postData) ->
         ###
-        # cat means category, tl means treasure low, gh means gems high. tab,
-        # page (but this is auto-sent), cat, tl, th, gl, gh, name, ordering,
-        # direct. Ordering can be 'expiration' or 'cost'. All values are
-        # strings. direct (direction) can be 'ASC' or 'DESC'. Valid categories
-        # are 'mats', 'app', 'dragons', 'fam', 'battle', 'skins', and 'other'.
+        # All values are strings.
+        # cat: category
+        # th: treasure high
+        # tl: treasure low
+        # gh: gems high
+        # gl: gems low
+        # tab
+        # page (but this is auto-sent)
+        # name
+        # ordering: 'expiration' or 'cost'.
+        # direct: direction, either 'ASC' (ascending) or 'DESC' (descending)
+        # Valid categories are 'mats', 'app', 'dragons', 'fam', 'battle',
+        # 'skins', and 'other'.
         ###
         @sales = []
 
-        if      @postData.direct   not in ['ASC', 'DESC'] or
+        if @postData.direct not in ['ASC', 'DESC'] or
                 @postData.ordering not in ['expiration', 'cost'] or
                 @postData.cat not in [
                     'mats', 'app', 'dragons', 'fam', 'battle', 'skins', 'other'
                 ]
+            # TODO: Shouldn't it just be:
+            # throw 'Invalid postData'
             throw new Error 'Invalid postData.'
 
         $.post("includes/ah_buy_#{tab}.php", @postData).done (response) =>
             # TODO: Get number of pages then addResponse for every one of them.
             response = $ response
-            pageHolderStyle = "font-size:12px; text-align:center; position:absolute; bottom:5px; height:27px; width:480px;"
-            pages = parseInt response.find("div[style='#{pageHolderStyle}'] a[style='cursor:pointer;']:last").text()
+            pageHolderStyle = "font-size:12px; text-align:center;
+                               position:absolute; bottom:5px; height:27px;
+                               width:480px;"
+
+            pages = parseInt response.find("
+                div[style='#{pageHolderStyle}']
+                a[style='cursor:pointer;']:last
+            ").text()
 
             @addResponse response
             # TODO: Make a recursive function with setHumanTimeout delays to get all the results.
@@ -164,18 +184,29 @@ class AuctionSearch # {{{2
 
     addResponse: (@response) ->
         console.log 'setResponse called on', @response
-        getNumber = (string) -> parseInt GET_NUMBER.exec(string)[0]
+        getNumber = (string) ->
+            # "1337" -> 1337
+            # "asdf 123 asdf 312" -> 123
+            # "$12" -> 12
+            return parseInt GET_NUMBER.exec(string)[0]
 
         sales = $ 'div[id^=sale]'
 
         for sale in sales
             saleInfo =
-                saleID:      getNumber sale.attr 'id'
-                itemID:      getNumber sale.find('img[src^="/images/cms/trinket/"').attr 'src'
-                quantity:    parseInt sale.find('span[style="position:absolute; bottom:0px; left:0px; background-color:#FFF; color:#731d08; font-size:11px; font-weight:bold; padding-right:2px; width:15px; height:10px; text-align:right;"]').text()
+                saleID: getNumber sale.attr 'id'
+                itemID: getNumber sale.find('img[src^="/images/cms/trinket/"').attr 'src'
+
+                quantity: parseInt sale.find('
+                    span[style="position:absolute; bottom:0px; left:0px;
+                    background-color:#FFF; color:#731d08; font-size:11px;
+                    font-weight:bold; padding-right:2px; width:15px;
+                    height:10px; text-align:right;"]
+                ').text()
+
                 # expiration is the number of seconds since the unix epoch
-                expiration:  getNumber sale.find('span[time]').attr 'time'
-                price:       getNumber sale.find('div[id^=buy_button]').text()
+                expiration: getNumber sale.find('span[time]').attr 'time'
+                price:      getNumber sale.find('div[id^=buy_button]').text()
 
                 currency: if sale.find('img[src$=icon_gems.png]').length
                     GEMS
