@@ -251,10 +251,9 @@ if /www1/.test(window.location.href)
 
     newHTML = treasureIndicator.html().replace(
         /\d+/,
-        currentTreasure,
-    )
+        currentTreasure)
 
-    treasureIndicator.html(newHTML)
+    treasureIndicator.html newHTML
 else
     treasureIndicator = findMatches('span#user_treasure', 1, 1)
     currentTreasure   = numberWithCommas safeParseInt treasureIndicator.text()
@@ -265,12 +264,11 @@ else
 if urlMatches new RegExp('http://www1\.flightrising\.com/trading/baldwin.*', 'i')
     # If there are any collect buttons.
     if findMatches("input[value='Collect!']", 0, 1).length
-        blinker = setInterval((->
+        blinker = setInterval_ BBB_BLINK_TIMEOUT, ->
             if document.title == 'Ready!'
                 document.title = '!!!!!!!!!!!!!!!!'
             else
                 document.title = 'Ready!'
-        ), BBB_BLINK_TIMEOUT)
 
         window.onfocus = ->
             clearInterval blinker
