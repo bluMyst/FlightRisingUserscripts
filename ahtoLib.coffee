@@ -93,6 +93,12 @@ setTimeout_ = (wait, f) -> # {{{1
     ###
     return setTimeout(f, wait)
 
+setInterval_ = (wait, f) -> # {{{1
+    ###
+    # See setTimeout_ above.
+    ###
+    return setInterval(f, wait)
+
 injectScript = (f) -> # {{{1
     ###
     # Injects a script to run in the window's namespace.
